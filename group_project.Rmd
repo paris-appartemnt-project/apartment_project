@@ -1,0 +1,62 @@
+---
+title: "group_project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries 
+```{r}
+# Load libraries
+library(dplyr)
+library(rvest)
+library(purrr)
+library(readr)
+library(tidyr)
+```
+
+## Data compilation
+
+### Schools database
+```{r}
+## Schools data set : keeping only 
+schools<- read_csv2(file = "DEPP-etab-1D2D.csv")
+schools <- schools %>% 
+  filter(localite_acheminement_uai == "PARIS")
+write.csv(schools, "schools_paris.csv")
+```
+
+### Castorys database
+```{r}
+# Creating a dataframe from one html page
+castorus <- read_html("https://www.castorus.com/s/Paris,51185,2-1")
+content <- castorus %>% 
+  html_nodes("table") %>% 
+  html_table(header = NA)
+content <- as.data.frame(content)
+
+# Extracting the street 
+content <- content %>%  separate(ville,into = c("ville","rue"),sep = "[(]",remove = TRUE) # Problème : une parenthèse à gauche inutile 
+  
+# Creation of a base of all the url (to gather all the different ads)
+base_url <- "https://www.castorus.com/s/Paris,51185,2-2---"
+list_url <- paste0(base_url,seq(0, 2990000, by = 10000),"-", seq(9900, 3000000, by = 10000))
+list_url
+
+# Essai - Method 1 - avec map  
+essai <- paste0(base_url,seq(0, 90000, by = 50000),"-", seq(9900, 1000000, by = 50000))
+list_essai <- essai %>% map(read_html)
+a <- list_essai %>% map(. %>% html_nodes("table")) %>% do.call(rbind, .)
+
+# Essai - Method 2- sans map 
+get_table <- function(url) {
+  url %>%
+  html_nodes("table") %>% 
+  html_table(header = NA)
+}
+result <- sapply(list_essai, get_table) #  Problème : Ici on a une liste de data frames (où chaque page internet est une data frame) : il faudrait le transformer en une unique data frame 
+```
+
+
