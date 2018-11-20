@@ -28,7 +28,7 @@ schools <- schools %>%
 write.csv(schools, "schools_paris.csv")
 ```
 
-### Castorys database
+### Castorus database
 ```{r}
 # Creating a dataframe from one html page
 castorus <- read_html("https://www.castorus.com/s/Paris,51185,2-1")
@@ -39,7 +39,19 @@ content <- as.data.frame(content)
 
 # Extracting the street 
 content <- content %>%  separate(ville,into = c("ville","rue"),sep = "[(]",remove = TRUE) # Problème : une parenthèse à gauche inutile 
-  
+
+url_description <- castorus %>% 
+  html_nodes("table") %>% 
+  html_nodes("a") %>% 
+  html_attr("href")
+
+base_url_description <- "https://www.castorus.com"
+list_url_description <- paste0(base_url_description,url_description)  
+
+url_description <- as.data.frame(list_url_description)
+
+i <- c(content, url_description)
+i <- as.data.frame(i)
 # Creation of a base of all the url (to gather all the different ads)
 base_url <- "https://www.castorus.com/s/Paris,51185,2-2---"
 list_url <- paste0(base_url,seq(0, 2990000, by = 10000),"-", seq(9900, 3000000, by = 10000))
