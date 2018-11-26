@@ -16,6 +16,8 @@ library(purrr)
 library(readr)
 library(tidyr)
 library(data.table)
+library(stringr)
+
 ```
 
 ## Data compilation
@@ -39,13 +41,16 @@ content <- castorus %>%
 content <- as.data.frame(content)
 
 # Extracting the street 
-content <- content %>%  separate(ville,into = c("ville","rue"),sep = "[(]",remove = TRUE) # Problème : une parenthèse à gauche inutile 
 
 #Extract the links of the description of the ads 
+
+content <- content %>%  separate(ville,into = c("ville","rue"),sep = "[(:)]",remove = TRUE) 
+
 url_description <- castorus %>% 
   html_nodes("table") %>% 
   html_nodes("a") %>% 
   html_attr("href")
+
 
 # Creating a base of all the url associated to each ad
 base_url_description <- "https://www.castorus.com"
@@ -80,6 +85,7 @@ description <- rbindlist(result)
 base_url <- "https://www.castorus.com/s/Paris,51185,2-2---"
 list_url <- paste0(base_url,seq(0, 2990000, by = 10000),"-", seq(9900, 3000000, by = 10000))
 list_url <- list_url %>% map(read_html)
+
 
 # Essai - Method 1 - avec map  
 essai <- paste0(base_url,seq(0, 90000, by = 50000),"-", seq(9900, 1000000, by = 50000))
