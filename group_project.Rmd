@@ -1,0 +1,99 @@
+---
+title: "group_project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries 
+```{r}
+# Load libraries
+library(dplyr)
+library(rvest)
+library(purrr)
+library(readr)
+library(tidyr)
+library(data.table)
+```
+
+## Data compilation
+
+### Schools database
+```{r}
+## Schools data set : keeping only 
+schools<- read_csv2(file = "DEPP-etab-1D2D.csv")
+schools <- schools %>% 
+  filter(localite_acheminement_uai == "PARIS")
+write.csv(schools, "schools_paris.csv")
+```
+
+### Castorus database
+```{r}
+# Creating a dataframe from one html page
+castorus <- read_html("https://www.castorus.com/s/Paris,51185,2-1")
+content <- castorus %>% 
+  html_nodes("table") %>% 
+  html_table(header = NA)
+content <- as.data.frame(content)
+
+# Extracting the street 
+content <- content %>%  separate(ville,into = c("ville","rue"),sep = "[(]",remove = TRUE) # Problème : une parenthèse à gauche inutile 
+
+#Extract the links of the description of the ads 
+url_description <- castorus %>% 
+  html_nodes("table") %>% 
+  html_nodes("a") %>% 
+  html_attr("href")
+
+# Creating a base of all the url associated to each ad
+base_url_description <- "https://www.castorus.com"
+list_url_description <- paste0(base_url_description,url_description)  
+list_url_description <- list_url_description %>%  map(read_html)
+url_description <- as.data.frame(list_url_description)
+content <- c(content, url_description)
+
+
+i <- c(content, url_description)
+i <- as.data.frame(i)
+
+# Extracting the description from the ads
+castorus_description <- read_html("https://www.castorus.com/paris-13eme-ardsmnt,d62685712")
+castorus_description <- castorus_description %>% 
+   html_nodes(".contenu_bw") %>% 
+  html_text()
+castorus_description <- as.data.frame(castorus_description[8])
+
+# Extracting the description from the ads - Generalisation for all the ads
+get_description <- function(url) {
+  description <- read_html(url) %>%
+  html_nodes(".contenu_bw") %>% 
+  html_text()
+  description <- as.data.frame(description[8])
+  return(description)
+}
+description <- lapply(list_url_description, get_description) # Problème: ne fonctionne pas car est de classe character
+description <- rbindlist(result)
+
+# Creation of a base of all the url (to gather all the different ads)
+base_url <- "https://www.castorus.com/s/Paris,51185,2-2---"
+list_url <- paste0(base_url,seq(0, 2990000, by = 10000),"-", seq(9900, 3000000, by = 10000))
+list_url <- list_url %>% map(read_html)
+
+# Essai - Method 1 - avec map  
+essai <- paste0(base_url,seq(0, 90000, by = 50000),"-", seq(9900, 1000000, by = 50000))
+list_essai <- essai %>% map(read_html)
+a <- list_essai %>% map(. %>% html_nodes("table")) %>% do.call(rbind, .)
+
+# Essai - Method 2- sans map 
+get_table <- function(url) {
+  url %>%
+  html_nodes("table") %>% 
+  html_table(header = NA)
+}
+result <- sapply(list_url, get_table) 
+result <- rbindlist(result)
+```
+
+
