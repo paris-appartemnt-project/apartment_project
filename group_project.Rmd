@@ -17,7 +17,6 @@ library(readr)
 library(tidyr)
 library(data.table)
 library(stringr)
-
 ```
 
 ## Data compilation
@@ -25,81 +24,95 @@ library(stringr)
 ### Schools database
 ```{r}
 ## Schools data set : keeping only 
-schools<- read_csv2(file = "DEPP-etab-1D2D.csv")
-schools <- schools %>% 
-  filter(localite_acheminement_uai == "PARIS")
-write.csv(schools, "schools_paris.csv")
+#schools <- schools %>% 
+#  filter(localite_acheminement_uai == "PARIS")
+#write.csv(schools, "schools_paris.csv")
 ```
 
 ### Castorus database
 ```{r}
-# Creating a dataframe from one html page
+## Step 1 : Create a dataframe with all the ads on Castorus website 
+# Create a dataframe from one html page (500 ads)
 castorus <- read_html("https://www.castorus.com/s/Paris,51185,2-1")
-content <- castorus %>% 
+castorus_table1 <- castorus %>% 
   html_nodes("table") %>% 
   html_table(header = NA)
-content <- as.data.frame(content)
+castorus_table1 <- as.data.frame(castorus_table1)
 
-# Extracting the street 
+# Generalize it for different url 
+get_table <- function(url) {
+  table <- url %>%
+  html_nodes("table") %>% 
+  html_table(header = NA)
+  table <- as.data.frame(table)
+  return(table)
+}
 
-#Extract the links of the description of the ads 
+# Create of a list of all the url (to gather all the different ads)
+base_url <- "https://www.castorus.com/s/Paris,51185,2-2---"
+list_url <- paste0(base_url,seq(0, 2990000, by = 10000),"-", seq(9900, 3000000, by = 10000))
+list_url2 <- list_url %>% 
+  map(read_html)
 
-content <- content %>%  separate(ville,into = c("ville","rue"),sep = "[(:)]",remove = TRUE) 
+# Create a dataframe with all the ads on the website 
+castorus_table <- sapply(list_url2, get_table) 
+castorus_table <- rbindlist(castorus_table)
 
-url_description <- castorus %>% 
+# Extract the street from the "ville" variable 
+castorus_table <- castorus_table %>%  
+  separate(ville,into = c("ville","rue"),sep = "[(:)]",remove = TRUE) 
+
+## Step 2 : Ad to the data previously created all the descriptions (that are on a different html page)
+# Find the end of the url of the description pages of all the ads on one html page 
+url_description1 <- castorus %>% 
   html_nodes("table") %>% 
   html_nodes("a") %>% 
   html_attr("href")
 
+# Generalize it for different url 
+get_link <- function(url){
+  link <- url %>% 
+  html_nodes("table") %>% 
+  html_nodes("a") %>% 
+  html_attr("href")
+  link <- as.data.frame(link)
+  return(link)
+}
 
-# Creating a base of all the url associated to each ad
+# Create a list with all url with the descriptions of the ads 
+url_description <- lapply(list_url2, get_link)
+url_description_df <- rbindlist(url_description)
+colnames(url_description_df) <- "links"
+url_description_ls <- url_description_df %>% 
+  pull("links")
 base_url_description <- "https://www.castorus.com"
-list_url_description <- paste0(base_url_description,url_description)  
-list_url_description <- list_url_description %>%  map(read_html)
-url_description <- as.data.frame(list_url_description)
-content <- c(content, url_description)
+list_url_description <- paste0(base_url_description,url_description_ls) 
+list_url_description2 <- list_url_description %>% 
+  map(read_html)
 
-
-i <- c(content, url_description)
-i <- as.data.frame(i)
-
-# Extracting the description from the ads
-castorus_description <- read_html("https://www.castorus.com/paris-13eme-ardsmnt,d62685712")
-castorus_description <- castorus_description %>% 
+# Extract the description from one particular ad 
+castorus_description1 <- read_html("https://www.castorus.com/paris-13eme-ardsmnt,d62685712")
+castorus_description1 <- castorus_description1 %>% 
    html_nodes(".contenu_bw") %>% 
   html_text()
-castorus_description <- as.data.frame(castorus_description[8])
+castorus_description1 <- as.data.frame(castorus_description1[8])
 
-# Extracting the description from the ads - Generalisation for all the ads
+# Extract the description from the ads - Generalisation for all the ads
 get_description <- function(url) {
-  description <- read_html(url) %>%
+  description <- url %>%
   html_nodes(".contenu_bw") %>% 
   html_text()
   description <- as.data.frame(description[8])
   return(description)
 }
-description <- lapply(list_url_description, get_description) # Problème: ne fonctionne pas car est de classe character
-description <- rbindlist(result)
 
-# Creation of a base of all the url (to gather all the different ads)
-base_url <- "https://www.castorus.com/s/Paris,51185,2-2---"
-list_url <- paste0(base_url,seq(0, 2990000, by = 10000),"-", seq(9900, 3000000, by = 10000))
-list_url <- list_url %>% map(read_html)
+# Create a dataframe with the descriptions of all the ads
+castorus_description <- lapply(list_url_description2, get_description)
+castorus_description <- rbindlist(castorus_description)
 
-
-# Essai - Method 1 - avec map  
-essai <- paste0(base_url,seq(0, 90000, by = 50000),"-", seq(9900, 1000000, by = 50000))
-list_essai <- essai %>% map(read_html)
-a <- list_essai %>% map(. %>% html_nodes("table")) %>% do.call(rbind, .)
-
-# Essai - Method 2- sans map 
-get_table <- function(url) {
-  url %>%
-  html_nodes("table") %>% 
-  html_table(header = NA)
-}
-result <- sapply(list_url, get_table) 
-result <- rbindlist(result)
+# Combine the two tables (ads and description)
+castorus_data <- c(castorus_table, castorus_description)
+castorus_data <- as.data.frame(castorus_data)
 ```
 
 
