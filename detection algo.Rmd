@@ -1,0 +1,119 @@
+---
+title: "Untitled"
+author: "ML"
+date: "11/23/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+library("tm")
+library("tidytext")
+library("proustr")
+library("tidyverse")
+devtools::install_github("ThinkRstat/stopwords", force = TRUE)
+library("stopwords")
+```
+
+```{r}
+text1 <- c("Situé à 2 mn à pieds du métro Wagram (ligne 3), charmant appartement dans une résidence sécurisée de standing (concierge, salle de réception, 2 chambres d'hôtes à disposition, ouverture d'une salle de sport prochainement). Au 1er ...")
+text<- toString(c(text1)) 
+lower <- tolower(text)
+unwanted_array = list(     'Ž'='Z', 'ž'='z', 'À'='A', 'Á'='A', 'Â'='A', 'Ã'='A', 'Ä'='A', 'Å'='A', 'Æ'='A', 'Ç'='C', 'È'='E', 'É'='E',
+                            'Ê'='E', 'Ë'='E', 'Ì'='I', 'Í'='I', 'Î'='I', 'Ï'='I', 'Ñ'='N', 'Ò'='O', 'Ó'='O', 'Ô'='O', 'Õ'='O', 'Ö'='O', 'Ø'='O', 'Ù'='U',
+                            'Ú'='U', 'Û'='U', 'Ü'='U', 'Ý'='Y', 'Þ'='B', 'ß'='Ss','á'='a',"à"="a", 'â'='a', 'ã'='a', 'ä'='a', 'å'='a', 'æ'='a', 'ç'='c', 
+                         'è'='e', 'é'='e', 'ê'='e', 'ë'='e', 'ì'='i', 'í'='i', 'î'='i', 'ï'='i', 'ð'='o', 'ñ'='n', 'ò'='o', 'ó'='o', 'ô'='o', 'õ'='o',
+                            'ö'='o', 'ø'='o', 'ù'='u', 'ú'='u', 'û'='u', 'ý'='y', 'ý'='y', 'þ'='b', 'ÿ'='y' )
+clean <- chartr(paste(names(unwanted_array), collapse=''),
+         paste(unwanted_array, collapse=''),
+         lower)
+removePunctuation(clean)
+```
+
+```{r}
+annonces <- data.frame(description=c("Situé à 2 mn à pieds du métro Wagram (ligne 3), charmant appartement dans une résidence sécurisée de standing (concierge, salle de réception, 2 chambres d'hôtes à disposition, ouverture d'une salle de sport prochainement). Au 1er ...", "Duplex à vendre en Immo-interactif® Adresse du bien: 133, rue Raymond Losserand 75014 Paris 14 Paris 14ème Paris 14 - Au 7ème et dernier étage d'un bel immeuble avec ascenseur, appartement de 77 m² au sol en duplex comprenant: Une...", "A proximité de la rue Raymond Losserand, dans une petite copropriété bien entretenue, nous vous proposons un appartement en duplex entièrement repensé et rénové par architecte. Il s ouvre sur un espace aménagé actuellement en bure..."))
+annoncesmini<- tolower(annonces$description)
+unwanted_array = list(     'Ž'='Z', 'ž'='z', 'À'='A', 'Á'='A', 'Â'='A', 'Ã'='A', 'Ä'='A', 'Å'='A', 'Æ'='A', 'Ç'='C', 'È'='E', 'É'='E',
+                            'Ê'='E', 'Ë'='E', 'Ì'='I', 'Í'='I', 'Î'='I', 'Ï'='I', 'Ñ'='N', 'Ò'='O', 'Ó'='O', 'Ô'='O', 'Õ'='O', 'Ö'='O', 'Ø'='O', 'Ù'='U',
+                            'Ú'='U', 'Û'='U', 'Ü'='U', 'Ý'='Y', 'Þ'='B', 'ß'='Ss','á'='a',"à"="a", 'â'='a', 'ã'='a', 'ä'='a', 'å'='a', 'æ'='a', 'ç'='c', 
+                         'è'='e', 'é'='e', 'ê'='e', 'ë'='e', 'ì'='i', 'í'='i', 'î'='i', 'ï'='i', 'ð'='o', 'ñ'='n', 'ò'='o', 'ó'='o', 'ô'='o', 'õ'='o',
+                            'ö'='o', 'ø'='o', 'ù'='u', 'ú'='u', 'û'='u', 'ý'='y', 'ý'='y', 'þ'='b', 'ÿ'='y' )
+cleanannonces <- chartr(paste(names(unwanted_array), collapse=''),
+         paste(unwanted_array, collapse=''),
+         annoncesmini) %>% removePunctuation()
+
+
+```
+
+```{r}
+ID <- data.frame(ID=c(1,2,3))
+df <- data.frame(c(ID,annonces))
+frequence <- df %>%
+   mutate(text = stringr::str_replace_all(df$description, "’", " ")) %>% 
+   unnest_tokens(word, text) %>%
+   filter(!word %in% stopwords_iso$fr) %>%
+   count(word, sort = TRUE) %>%
+   head(10)
+graph <- barplot(height=frequence$n, names.arg= frequence$word, xlab="Mots", ylab="Fréquence", col="#973232", main="À la recherche du temps perdu")
+library(stringr)
+station <- str_extract(cleanannonces, '(?=metro\\s)\\w+\\s+\\w+') 
+rue <- str_extract(cleanannonces, '(?=rue\\s)\\w+\\s+\\w+\\s+\\w+') 
+numberue <- str_extract(cleanannonces, "(?!=rue\\s)\\d+\\d+")
+
+
+```
+
+
+```{r}
+roadnames <- read.csv("roadnames.csv")
+roadnames <- roadnames[-c(35,4822, 12874, 13057, 17218, 20551, 20597,21831, 23291, 30137, 30640, 30641, 30642, 32100, 33021, 33384, 33842, 34725, 34767, 34913, 34957, 37145, 37525, 37769, 38212,38289, 38721, 38804, 38813, 32689:32698, 26923, 26924, 32616:32618, 17093, 37459, 30167), ]
+roadmini<- tolower(roadnames$name)
+unwanted_array = list(     'Ž'='Z', 'ž'='z', 'À'='A', 'Á'='A', 'Â'='A', 'Ã'='A', 'Ä'='A', 'Å'='A', 'Æ'='A', 'Ç'='C', 'È'='E', 'É'='E',
+                            'Ê'='E', 'Ë'='E', 'Ì'='I', 'Í'='I', 'Î'='I', 'Ï'='I', 'Ñ'='N', 'Ò'='O', 'Ó'='O', 'Ô'='O', 'Õ'='O', 'Ö'='O', 'Ø'='O', 'Ù'='U',
+                            'Ú'='U', 'Û'='U', 'Ü'='U', 'Ý'='Y', 'Þ'='B', 'ß'='Ss','á'='a',"à"="a", 'â'='a', 'ã'='a', 'ä'='a', 'å'='a', 'æ'='a', 'ç'='c', 
+                         'è'='e', 'é'='e', 'ê'='e', 'ë'='e', 'ì'='i', 'í'='i', 'î'='i', 'ï'='i', 'ð'='o', 'ñ'='n', 'ò'='o', 'ó'='o', 'ô'='o', 'õ'='o',
+                            'ö'='o', 'ø'='o', 'ù'='u', 'ú'='u', 'û'='u', 'ý'='y', 'ý'='y', 'þ'='b', 'ÿ'='y' )
+cleanroad <- chartr(paste(names(unwanted_array), collapse=''),
+         paste(unwanted_array, collapse=''),
+         roadmini)
+cleanroadf <- data.frame(cleanroad)
+
+
+```
+
+
+```{r}
+
+x <- sapply(cleanroad, function(x) grepl(x, cleanannonces ,ignore.case = F ,perl = F,
+      fixed = TRUE, useBytes = FALSE))
+extrait <- apply(x, 1, function(i) paste0(names(i)[i], collapse = ","))
+extrait
+
+
+
+```
+
+
