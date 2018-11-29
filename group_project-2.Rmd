@@ -146,14 +146,15 @@ Unaccent <- function(text) {
 castorus_description$Description <- tolower(castorus_description$Description)
 castorus_description$Description <- Unaccent(castorus_description$Description)
 castorus_description$Description <- gsub("a\\(c\\)","e",castorus_description$Description)
-castorus_description$Description
-gsub("[^[:alnum:][:blank:]?&/\\-]", "", castorus_description$Description)
+castorus_description$Description <- gsub("[^[:alnum:][:blank:]?&/\\-]", "", castorus_description$Description)
 
 castorus_description <- castorus_description %>% dplyr::filter(str_detect(Description, 'extrait de la derniere description'))
 castorus_description$Description <- gsub(".*:","",castorus_description$Description) 
+castorus_description$Description <- castorus_description %>% unlist()
 
 # Combine the two tables (ads and description)
-save(castorus_description, file="castorus_description.RData" )
+write_csv(castorus_description, "castorus_description150m2.csv" )
+a1<-load("/Users/po/Downloads/castorus_description150m2.RData")
 castorus_data <- c(castorus_table, castorus_description)
 castorus_data <- as.data.frame(castorus_data)
 View(castorus_data)
