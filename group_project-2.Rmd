@@ -1,0 +1,161 @@
+---
+title: "group_project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries 
+```{r}
+# Load libraries
+library(dplyr)
+library(rvest)
+library(purrr)
+library(readr)
+library(tidyr)
+library(data.table)
+library(stringr)
+library(base)
+library(stringi)
+```
+
+## Data compilation
+
+### Schools database
+```{r}
+## Schools data set : keeping only 
+#schools <- schools %>% 
+#  filter(localite_acheminement_uai == "PARIS")
+#write.csv(schools, "schools_paris.csv")
+```
+
+### Castorus database
+```{r}
+## Step 1 : Create a dataframe with all the ads on Castorus website 
+# Create a dataframe from one html page (500 ads)
+castorus <- read_html("https://www.castorus.com/s/Paris,51185,2-1")
+castorus_table1 <- castorus %>% 
+  html_nodes("table") %>% 
+  html_table(header = NA)
+castorus_table1 <- as.data.frame(castorus_table1)
+
+# Generalize it for different url 
+get_table <- function(url) {
+  table <- url %>%
+  html_nodes("table") %>% 
+  html_table(header = NA)
+  table <- as.data.frame(table)
+  return(table)
+}
+
+# Create of a list of all the url (to gather all the different ads)
+base_url <- "https://www.castorus.com/s/Paris,51185,2-2---"
+list_url <- paste0(base_url,seq(0, 2990000, by = 10000),"-", seq(9900, 3000000, by = 10000))
+list_url2 <- list_url %>% 
+  map(read_html)
+
+# Create a dataframe with all the ads on the website 
+castorus_table <- sapply(list_url2, get_table) 
+castorus_table <- rbindlist(castorus_table)
+
+# Extract the street from the "ville" variable 
+castorus_table <- castorus_table %>%  
+  separate(ville,into = c("ville","rue"),sep = "[(:)]",remove = TRUE) 
+
+
+```
+
+
+```{r}
+## Step 2 : Add to the data previously created all the descriptions (that are on a different html page)
+# Find the end of the url of the description pages of all the ads on one html page 
+url_description1 <- castorus %>% 
+  html_nodes("table") %>% 
+  html_nodes("a") %>% 
+  html_attr("href")
+
+# Generalize it for different url 
+get_link <- function(url){
+  link <- url %>% 
+  html_nodes("table") %>% 
+  html_nodes("a") %>% 
+  html_attr("href")
+  link <- as.data.frame(link)
+  return(link)
+}
+
+
+# Create a list with all url with the descriptions of the ads 
+url_description <- lapply(list_url2, get_link)
+url_description_df <- rbindlist(url_description)
+colnames(url_description_df) <- "links"
+url_description_ls <- url_description_df %>% 
+  pull("links")
+base_url_description <- "https://www.castorus.com"
+list_url_description <- paste0(base_url_description,url_description_ls)
+
+# Create a function to deal with errors in reading html
+try_catch_url <- function(url){
+  tryCatch(
+    url %>%
+      read_html(),
+    error = function(e){NA}    # a function that returns NA regardless of what happened
+  )
+}
+
+list_url_description_150 <- list_url_description[1:150]
+
+
+list_description_final<- list_url_description_150 %>% # essayer avec map pour optimiser le temps de calcul
+    map(try_catch_url)
+
+# Extract the description from one particular add 
+castorus_description1 <- read_html("https://www.castorus.com/paris-13eme-ardsmnt,d62685712")
+castorus_description1 <- castorus_description1 %>% 
+   html_nodes(".contenu_bw") %>% 
+  html_text()
+castorus_description1[] <- as.data.frame(castorus_description1[8])
+
+# Extract the description from the ads - Generalisation for all the ads
+
+
+get_description <- function(url) {
+  description <- tryCatch(
+     url %>%
+  html_nodes(".contenu_bw") %>% 
+  html_text %>% 
+  unlist(), error = function(e){NA})
+  description <- as.data.frame(description[8])
+  return(description)
+}
+# Create a dataframe with the descriptions of all the ads
+castorus_description <- map(list_description_final, get_description)
+castorus_description <- rbindlist(castorus_description) 
+castorus_description <- as.data.frame(castorus_description) %>% rename(Description = 'description[8]') 
+castorus_description <- castorus_description %>%  as.data.frame()
+
+Unaccent <- function(text) {
+  text <- gsub("['`^~\"]", " ", text)
+  text <- iconv(text, to="ASCII//TRANSLIT//IGNORE")
+  text <- gsub("['`^~\"]", "", text)
+  return(text)
+}
+
+castorus_description$Description <- tolower(castorus_description$Description)
+castorus_description$Description <- Unaccent(castorus_description$Description)
+castorus_description$Description <- gsub("a\\(c\\)","e",castorus_description$Description)
+castorus_description$Description
+gsub("[^[:alnum:][:blank:]?&/\\-]", "", castorus_description$Description)
+
+castorus_description <- castorus_description %>% dplyr::filter(str_detect(Description, 'extrait de la derniere description'))
+castorus_description$Description <- gsub(".*:","",castorus_description$Description) 
+
+# Combine the two tables (ads and description)
+save(castorus_description, file="castorus_description.RData" )
+castorus_data <- c(castorus_table, castorus_description)
+castorus_data <- as.data.frame(castorus_data)
+View(castorus_data)
+```
+
