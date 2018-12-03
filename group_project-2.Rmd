@@ -64,8 +64,8 @@ castorus_table <- rbindlist(castorus_table)
 castorus_table <- castorus_table %>%  
   separate(ville,into = c("ville","rue"),sep = "[(:)]",remove = TRUE) 
 
-
 ```
+
 
 
 ```{r}
@@ -95,6 +95,31 @@ url_description_ls <- url_description_df %>%
   pull("links")
 base_url_description <- "https://www.castorus.com"
 list_url_description <- paste0(base_url_description,url_description_ls)
+castorus_table <- cbind(castorus_table,as.data.frame(unlist(list_url_description)))
+
+## Data cleanup
+castorus_table$prix <- as.character(castorus_table$prix)
+#Remove euro sign from prix column
+castorus_table$prix <- gsub("[^[:alnum:][:blank:]?&/\\-]", "", castorus_table$prix)
+#Remove spaces in between characters
+castorus_table$prix <- gsub("[[:space:]]", "", castorus_table$prix) 
+#Remove zeroes in front of first non zero digit
+castorus_table$prix <- gsub("^[0]+", "", castorus_table$prix) 
+#Convert prix to numeric
+castorus_table$prix <- as.numeric(castorus_table$prix)
+
+# While looking at the data it is evident that there are some anormalities within the data. This is due to the fact that some of the flats are for rent and not for sale. 
+# It is necessary to filter out the studios which will have a small price and the flats which will have about the same price but which are on rent.
+castorus_table <-  as.data.frame(castorus_table)
+
+# Select flats when they have more than 1 room and a price higher than 50000€ or when there is only 1 room so a studio. 
+castorus_table <- castorus_table %>% mutate(Type = case_when((piec. != 1 & prix >= 50000) | (piec. == 1) ~ 1, 
+                                              TRUE~ 0 
+                                              )
+                                            )
+castorus_table <- castorus_table %>% filter(Type == 1)
+
+
 
 # Create a function to deal with errors in reading html
 try_catch_url <- function(url){
@@ -130,6 +155,7 @@ get_description <- function(url) {
   description <- as.data.frame(description[8])
   return(description)
 }
+
 # Create a dataframe with the descriptions of all the ads
 castorus_description <- map(list_description_final, get_description)
 castorus_description <- rbindlist(castorus_description) 
