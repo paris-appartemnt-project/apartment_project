@@ -1,0 +1,106 @@
+
+---
+title: "Group project algo"
+author: "ML"
+date: "12/1/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library("tm")
+library("tidytext")
+library("proustr")
+library("tidyverse")
+
+```
+
+First We download the csv containing all the offers descriptions. Using read.csv at first, We follow up by transforming all our text into simple and usable characters. 
+To do so tolower() allow us to transform all to lower characters and unwanted_array combined with chartr and removePunctuation() let us remove all the accents, the punctuation and unwanted characters in our text. 
+```{r}
+annonces <- read.csv("descri.csv")
+annoncesmini<- tolower(annonces$Description)
+#tolower() is a function that transform our characters into lower characters as it is optimal for later use when coding in R.
+unwanted_array = list(     'Ž'='Z', 'ž'='z', 'À'='A', 'Á'='A', 'Â'='A', 'Ã'='A', 'Ä'='A', 'Å'='A', 'Æ'='A', 'Ç'='C', 'È'='E', 'É'='E',
+                            'Ê'='E', 'Ë'='E', 'Ì'='I', 'Í'='I', 'Î'='I', 'Ï'='I', 'Ñ'='N', 'Ò'='O', 'Ó'='O', 'Ô'='O', 'Õ'='O', 'Ö'='O', 'Ø'='O', 'Ù'='U',
+                            'Ú'='U', 'Û'='U', 'Ü'='U', 'Ý'='Y', 'Þ'='B', 'ß'='Ss','á'='a',"à"="a", 'â'='a', 'ã'='a', 'ä'='a', 'å'='a', 'æ'='a', 'ç'='c', 
+                         'è'='e', 'é'='e', 'ê'='e', 'ë'='e', 'ì'='i', 'í'='i', 'î'='i', 'ï'='i', 'ð'='o', 'ñ'='n', 'ò'='o', 'ó'='o', 'ô'='o', 'õ'='o', 'ö'='o', 'ø'='o', 'ù'='u', 'ú'='u', 'û'='u', 'ý'='y', 'ý'='y', 'þ'='b', 'ÿ'='y' )
+#this is a list of all unwanted characters in our text. I will combine later with other function in R to remove all of them from our text.
+cleanannonces <- chartr(paste(names(unwanted_array), collapse=''),
+         paste(unwanted_array, collapse=''),
+         annoncesmini) 
+cleanannonces <- gsub("-", " ", cleanannonces, fixed=TRUE)
+# In cleanannonces we remove all characters that were unwanted while also getting rid of the punctuation thanks to removePunctuation() function. 
+```
+
+```{r}
+roadnames <- read.csv("roadnames.csv")
+roadnames <- roadnames[-c(35,4822, 12874, 13057, 17218, 20551, 20597,21831, 23291, 30137, 30640, 30641, 30642, 32100, 33021, 33384, 33842, 34725, 34767, 34913, 34957, 37145, 37525, 37769, 38212,38289, 38721, 38804, 38813, 32689:32698, 26923, 26924, 32616:32618, 17093, 37459, 30167, 32011:32036, 33720, 26108, 18807, 25850, 32614, 36639, 29994, 33291, 38029, 38090, 35951, 38316), ]
+roadmini<- tolower(roadnames$name)
+
+cleanroad <- chartr(paste(names(unwanted_array), collapse=''),
+         paste(unwanted_array, collapse=''),
+         roadmini)  
+cleanroadff <- data.frame(cleanroad)
+cleanroad <- tolower(cleanroadff)
+cleanroad <- chartr(paste(names(unwanted_array), collapse=''),
+         paste(unwanted_array, collapse=''),
+         roadmini) 
+cleanroad <- gsub("-", " ", cleanroad, fixed=TRUE)
+
+stationames <- read.csv("nom_stations.csv") 
+id <- c(1:1130) 
+stationames <- data.frame(id,stationames) 
+stationames <- stationames[-c(30), ] 
+stationmini <- tolower(stationames$Boulogne.Jean.Jaur.s) 
+stationmini <- data.frame(stationmini) 
+stationmini <- stationmini[!duplicated(stationmini), ] 
+stationminidf <- data.frame(stationmini) 
+cleanstation <- chartr(paste(names(unwanted_array), collapse=''), paste(unwanted_array, collapse=''), stationmini) 
+
+#Here we apply the same method as we did on the desriptions to roadnames and stationames. The main difference is that we get rid off some of the rows of our dataframes using this function [-c(), ]. It allows us to delete faulty roadnames or noisy data as sometimes we have very strange roadnames that lead to mistakes in the output such as a road called "A" that will take into account all the "A" in my text leading to irrelevant output. 
+
+
+```
+
+After taking care of our data and cleaning it. It is now available to use. 
+Our goal is to match our description with certain words or numbers (a road name, a station name of a road number) that will be used later to geolocalize our flat/house. 
+To do so the approach is to extract all the words that will be present in a given dataframe and put our 3 main interests (a road name, a station name of a road number) in 3 different columns. 
+When the function find a match between dataframe of description and roadnames for example it extract it and put it as an output.
+
+```{r}
+x <- sapply(cleanroad, function(x) grepl(x, cleanannonces ,ignore.case = F ,perl = F,
+      fixed = TRUE, useBytes = FALSE))
+rue_du_bien <- apply(x, 1, function(i) paste0(names(i)[i], collapse = ","))
+rue_du_bien<- data.frame(rue_du_bien)
+#sapply work consist in traversing over a set of data like a list or vector, and calling the specified function for each item. Here we combine it to cleanroad the data.frame of our roadnames cleaned fromm all unwanted characters,punctuation etc. Then we use grepl() a function that extract words from a text in R and give it cleanannonces the cleaned annonces dataframe to extract all the road names present in it while fixed = TRUE allow us to get only exact matching as if we did not specify it it will be impossible to get relevant results as in every road names there is usually the word road or street and grepl would pick up all the roads without differentiation. 
+
+numero_de_rue <- str_extract(cleanannonces, "([\\d]+) rue ")
+require("tm")
+numero_de_rue <- removeWords(numero_de_rue , "rue")
+numero_de_rue <- data.frame(ID,numero_de_rue)
+numero_de_rue=apply(numero_de_rue,2,as.numeric)
+numero_de_rue[numero_de_rue>500]=NA
+#The approach here is a bit diiferent as we do not use sapply or grepl to do our extraction. This is because we do not use a dataframe of numbers to do the extraction. We use a more creative manneer by approaching the question in a logical way. It is clear that when giving an adress we usually set it in the following form : Number roadname neighborhoud postalcode city. As the city is fixed to be Paris and the postalcode in Paris is direclty linked to neighbourhood and is know in this given case. We can focus on the number and roadname. The number is before the roadname, therefore we use a str_extract() function using the regex approach in R we code that everytime our algorithm sees the word "rue" or "boulevard" it gives the number before this word if existing. We then only keep numbers under 500 in order to get rid of possible mistakes or unexpected situations. 
+
+station <- sapply(cleanstation, function(x) grepl(x, cleanannonces ,ignore.case = F ,perl = F,
+      fixed = TRUE, useBytes = FALSE))
+station_a_proximite <- apply(station, 1, function(i) paste0(names(i)[i], collapse = ","))
+station_a_proximite <- data.frame(station_a_proximite)
+
+#In station we use the exact same process as in roadnames extraction process. 
+
+fullextrait <- data.frame( numero_de_rue, rue_du_bien,  station_a_proximite)
+fullextrait
+
+
+# Here we construct a finished dataframe that gives us all the informations we were looking form in a tidy presentation. 
+``` 
+
+
+
+
+
