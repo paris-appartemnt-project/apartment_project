@@ -78,11 +78,13 @@ localisation_metro2 <- function(df){
 localisation_metro2 <- function(df){
     if(is.na(df$num_rue) & is.na(df$extrait) & str_count(df$stationextrait,',')>1){
       stations <- unlist(strsplit(df$stationextrait,","))
-  map la fonction de geocoding sur les elemets de stations
-  coord est ensuite la moyenne des longitudes et la moyenne des latitudes
- return(coord) 
+      stations <- paste0(stations,", Paris, France")
+      stations <<- stations %>% map(google_geocode,key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM")
+      #coord <<- mean(stations$results$geometry$location$lng),mean(stations$results$geometry$location$lat)) 
+ return(stations) 
   }
 }
+localisation_metro2(fullextrait[12,])
   #else{
    # if(is.na(fullextrait$extrait) == FALSE){
      # if(str_count(fullextrait$stationextrait,',') == 0){
@@ -100,6 +102,9 @@ localisation_metro2 <- function(df){
 #loc$results$geometry$location$lat
 #loc$results$geometry$location$lng
 #is.na(fullextrait$num_rue)
+h <- list("a","b")
+i <- paste0(h,"Paris")
+i
 ```
 
 ```{r}
