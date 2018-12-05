@@ -1,0 +1,108 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+install.packages("stringr")
+library(stringr)
+library(dplyr)
+library(googleway)
+library(geosphere)
+```
+
+We are now going to find the location of the appartements using the Google maps API
+If we have the full address, we will use the coordinate of the full address but if we do not have the full adress we will une either the nema of the street or the metro station. If we have more than one of these informations we will compute the mean of the location of all the available datas.
+```{r}
+fullextrait
+a <- google_geocode("23 Rue Claude Lorain, Paris", key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM")
+a$results$geometry$location$lat
+a
+```
+
+
+```{r}
+#Replace blanks by NAs
+fullextrait[fullextrait==""]  <- NA
+
+#Fonction adresse complète
+localisation_comp <- function(df){
+  if (is.na(df$num_rue) == FALSE & is.na(df$extrait) == FALSE ) {
+ loc <- google_geocode(paste0(df$num_rue,df$extrait,", Paris, France"), key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM")
+ lat <- loc$results$geometry$location$lat
+ lon <- loc$results$geometry$location$lng
+ coord <<- list(lon,lat)
+ return(coord)
+  }
+}
+localisation_comp(fullextrait[6,])
+
+#Fonction rue unique 
+localisation_rue <- function(df){
+    if(is.na(df$num_rue) & is.na(df$extrait) == FALSE & is.na(df$stationextrait)){
+  loc <- google_geocode(paste0(df$extrait,", Paris, France"), key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM")
+  lat <- loc$results$geometry$location$lat
+  lon <- loc$results$geometry$location$lng
+  coord <<- list(lon,lat)
+ return(coord)
+  }
+}
+
+localisation_rue(fullextrait[9,])
+
+#Fontion metro unique 
+localisation_metro <- function(df){
+    if(is.na(df$num_rue) & is.na(df$extrait) & str_count(df$stationextrait,',')==0){
+  loc <- google_geocode(paste0("metro",df$stationextrait,", Paris, France"), key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM")
+  lat <- loc$results$geometry$location$lat
+  lon <- loc$results$geometry$location$lng
+  coord <<- list(lon,lat)
+ return(coord) 
+  }
+}
+
+localisation_metro(fullextrait[35,])
+
+#Fonction 2 metros
+localisation_metro2 <- function(df){
+    if(is.na(df$num_rue) & is.na(df$extrait) & str_count(df$stationextrait,',')==1){
+      stations <- unlist(strsplit(df$stationextrait,","))
+  loc1 <- google_geocode(paste0("metro",stations[1],", Paris, France"), key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM")
+  loc2 <- google_geocode(paste0("metro",stations[2],", Paris, France"), key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM")
+  coord <<- list(midPoint(loc1$results$geometry$location,loc2$results$geometry$location))
+ return(coord) 
+  }
+}
+
+#Fonction plus que 2 métros 
+localisation_metro2 <- function(df){
+    if(is.na(df$num_rue) & is.na(df$extrait) & str_count(df$stationextrait,',')>1){
+      stations <- unlist(strsplit(df$stationextrait,","))
+  map la fonction de geocoding sur les elemets de stations
+  coord est ensuite la moyenne des longitudes et la moyenne des latitudes
+ return(coord) 
+  }
+}
+  #else{
+   # if(is.na(fullextrait$extrait) == FALSE){
+     # if(str_count(fullextrait$stationextrait,',') == 0){
+       # if(is.na(fullextrait$stationextrait)){
+      #loc <- google_geocode(paste0(fullextrait$extrait,", Paris, France"),key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM")}
+      #  else{loc <- midPoint(google_geocode(paste0(fullextrait$extrait,", Paris, France"),key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM"),paste0(fullextrait$stationextrait,", Paris, France"),key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM")}
+     # if(str_count(fullextrait$stationextrait,',') >0){
+     #faire le midpoint des n points}
+    #else{regarder combien il y a des stations de metro et faire le point}    
+   # }
+#  }
+#}
+#}
+#remplacer les trucs par nchar(,)
+#loc$results$geometry$location$lat
+#loc$results$geometry$location$lng
+#is.na(fullextrait$num_rue)
+```
+
+```{r}
+if(is.na(fullextrait$num_rue) == FALSE & is.na(fullextrait$extrait) == FALSE ) {print("a")}
+```
+
