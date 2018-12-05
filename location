@@ -79,7 +79,7 @@ We are now going to find the location of the appartements using the Google maps 
 If we have the full address, we will use the coordinate of the full address but if we do not have the full adress we will une either the nema of the street or the metro station. If we have more than one of these informations we will compute the mean of the location of all the available datas.
 ```{r}
 fullextrait
-a <- google_geocode("23 Rue Claude Lorain, Paris", key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM")
+
 a$results$geometry$location$lat
 a
 ```
@@ -92,7 +92,7 @@ fullextrait[fullextrait==""]  <- NA
 #Fonction adresse complète
 localisation_comp <- function(df){
   if (is.na(df$num_rue) == FALSE & is.na(df$extrait) == FALSE ) {
- loc <- google_geocode(paste0(df$num_rue,df$extrait,", Paris, France"), key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM")
+
  lat <- loc$results$geometry$location$lat
  lon <- loc$results$geometry$location$lng
  coord <<- list(lon,lat)
@@ -104,7 +104,7 @@ localisation_comp(fullextrait[6,])
 #Fonction rue unique 
 localisation_rue <- function(df){
     if(is.na(df$num_rue) & is.na(df$extrait) == FALSE & is.na(df$stationextrait)){
-  loc <- google_geocode(paste0(df$extrait,", Paris, France"), key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM")
+ 
   lat <- loc$results$geometry$location$lat
   lon <- loc$results$geometry$location$lng
   coord <<- list(lon,lat)
@@ -117,7 +117,7 @@ localisation_rue(fullextrait[9,])
 #Fontion metro 
 localisation_metro <- function(df){
     if(is.na(df$num_rue) & is.na(df$extrait) & str_count(df$stationextrait,',')==0){
-  loc <- google_geocode(paste0("metro",df$stationextrait,", Paris, France"), key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM")
+  
   lat <- loc$results$geometry$location$lat
   lon <- loc$results$geometry$location$lng
   coord <<- list(lon,lat)
@@ -131,8 +131,7 @@ localisation_metro(fullextrait[35,])
    # if(is.na(fullextrait$extrait) == FALSE){
      # if(str_count(fullextrait$stationextrait,',') == 0){
        # if(is.na(fullextrait$stationextrait)){
-      #loc <- google_geocode(paste0(fullextrait$extrait,", Paris, France"),key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM")}
-      #  else{loc <- midPoint(google_geocode(paste0(fullextrait$extrait,", Paris, France"),key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM"),paste0(fullextrait$stationextrait,", Paris, France"),key = "AIzaSyDBIYQwxvUVTn5GumtMtMZhXZtbyw7KPrM")}
+
      # if(str_count(fullextrait$stationextrait,',') >0){
      #faire le midpoint des n points}
     #else{regarder combien il y a des stations de metro et faire le point}    
