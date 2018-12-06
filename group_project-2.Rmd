@@ -19,6 +19,9 @@ library(data.table)
 library(stringr)
 library(base)
 library(stringi)
+
+# Clear workspace
+rm(list=ls())
 ```
 
 ## Data compilation
@@ -34,13 +37,6 @@ library(stringi)
 ### Castorus database
 ```{r}
 ## Step 1 : Create a dataframe with all the ads on Castorus website 
-# Create a dataframe from one html page (500 ads)
-castorus <- read_html("https://www.castorus.com/s/Paris,51185,2-1")
-castorus_table1 <- castorus %>% 
-  html_nodes("table") %>% 
-  html_table(header = NA)
-castorus_table1 <- as.data.frame(castorus_table1)
-
 # Generalize it for different url 
 get_table <- function(url) {
   table <- url %>%
@@ -57,25 +53,17 @@ list_url2 <- list_url %>%
   map(read_html)
 
 # Create a dataframe with all the ads on the website 
-castorus_table <- sapply(list_url2, get_table) 
+castorus_table <- map(list_url2, get_table) 
 castorus_table <- rbindlist(castorus_table)
-
+castorus_table <- as.data.frame(castorus_table)
 # Extract the street from the "ville" variable 
-castorus_table <- castorus_table %>%  
-  separate(ville,into = c("ville","rue"),sep = "[(:)]",remove = TRUE) 
-
+castorus_table <- castorus_table %>% separate(ville,into = c("ville","rue"),sep = "[(:)]",remove = TRUE) 
 ```
 
 
 
 ```{r}
 ## Step 2 : Add to the data previously created all the descriptions (that are on a different html page)
-# Find the end of the url of the description pages of all the ads on one html page 
-url_description1 <- castorus %>% 
-  html_nodes("table") %>% 
-  html_nodes("a") %>% 
-  html_attr("href")
-
 # Generalize it for different url 
 get_link <- function(url){
   link <- url %>% 
@@ -86,16 +74,16 @@ get_link <- function(url){
   return(link)
 }
 
-
 # Create a list with all url with the descriptions of the ads 
-url_description <- lapply(list_url2, get_link)
+url_description <- map(list_url2, get_link)
 url_description_df <- rbindlist(url_description)
 colnames(url_description_df) <- "links"
 url_description_ls <- url_description_df %>% 
   pull("links")
 base_url_description <- "https://www.castorus.com"
 list_url_description <- paste0(base_url_description,url_description_ls)
-castorus_table <- cbind(castorus_table,as.data.frame(unlist(list_url_description)))
+castorus_table <- cbind(castorus_table,as.data.frame(list_url_description))  
+castorus_table$list_url_description <- as.character(castorus_table$list_url_description)
 
 ## Data cleanup
 castorus_table$prix <- as.character(castorus_table$prix)
@@ -113,13 +101,20 @@ castorus_table$prix <- as.numeric(castorus_table$prix)
 castorus_table <-  as.data.frame(castorus_table)
 
 # Select flats when they have more than 1 room and a price higher than 50000€ or when there is only 1 room so a studio. 
-castorus_table <- castorus_table %>% mutate(Type = case_when((piec. != 1 & prix >= 50000) | (piec. == 1) ~ 1, 
+castorus_table <- castorus_table %>% 
+  mutate(Type = case_when((piec. != 1 & prix >= 50000) | (piec. == 1) ~ 1, 
                                               TRUE~ 0 
                                               )
                                             )
+
 castorus_table <- castorus_table %>% filter(Type == 1)
 
+write_csv(castorus_table,"castorus_table1.csv") 
 
+castorus_table$ville <- tolower(castorus_table$ville)
+castorus_table <- castorus_table %>% dplyr::filter(grepl("paris", ville))
+castorus_table <- castorus_table %>% separate(ville,into = c("ville","arrondissement"),sep = "(?<=[a-zA-Z])\\s*(?=[0-9])",remove = TRUE) 
+castorus_table$arrondissement <- trimws(castorus_table$arrondissement)
 
 # Create a function to deal with errors in reading html
 try_catch_url <- function(url){
@@ -130,18 +125,7 @@ try_catch_url <- function(url){
   )
 }
 
-list_url_description_150 <- list_url_description[1:150]
-
-
-list_description_final<- list_url_description_150 %>% # essayer avec map pour optimiser le temps de calcul
-    map(try_catch_url)
-
-# Extract the description from one particular add 
-castorus_description1 <- read_html("https://www.castorus.com/paris-13eme-ardsmnt,d62685712")
-castorus_description1 <- castorus_description1 %>% 
-   html_nodes(".contenu_bw") %>% 
-  html_text()
-castorus_description1[] <- as.data.frame(castorus_description1[8])
+list_description_final<- castorus_table$list_url_description %>% map(try_catch_url)
 
 # Extract the description from the ads - Generalisation for all the ads
 
@@ -174,14 +158,14 @@ castorus_description$Description <- Unaccent(castorus_description$Description)
 castorus_description$Description <- gsub("a\\(c\\)","e",castorus_description$Description)
 castorus_description$Description <- gsub("[^[:alnum:][:blank:]?&/\\-]", "", castorus_description$Description)
 
-castorus_description <- castorus_description %>% dplyr::filter(str_detect(Description, 'extrait de la derniere description'))
-castorus_description$Description <- gsub(".*:","",castorus_description$Description) 
-castorus_description$Description <- castorus_description %>% unlist()
+castorus_data <- cbind(castorus_table, castorus_description) 
+castorus_data <- castorus_data %>% dplyr::filter(str_detect(Description, 'extrait de la derniere description'))
+castorus_data$Description <- gsub(".*:","",castorus_data$Description) 
 
 # Combine the two tables (ads and description)
-write_csv(castorus_description, "castorus_description150m2.csv" )
-a1<-load("/Users/po/Downloads/castorus_description150m2.RData")
-castorus_data <- c(castorus_table, castorus_description)
+write_csv(castorus_description, "castorus_description.csv" )
+write_csv(castorus_data, "castorus_data.csv")
+a1<-load("/Users/po/Downloads/castorus_description.RData")
 castorus_data <- as.data.frame(castorus_data)
 View(castorus_data)
 ```
