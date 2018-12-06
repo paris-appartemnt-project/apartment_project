@@ -1,0 +1,60 @@
+---
+title: "Algorithme de tri"
+author: "Alexis Lancien"
+date: "5 décembre 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rvest)
+library(stringr)
+library(plyr)
+library(dplyr)
+library(ggvis)
+library(knitr)
+options(digits = 4)
+```
+
+#Creation d'un vecteur de coordonnées pour les biens, travail sur 1132 biens 
+```{r}
+metro_loc <- read.csv2("stations.csv") # je prends le métro en attendant la géoloc des biens
+
+coordinates <- metro_loc %>%  select(metro_loc = Geo.Point)
+coordinates
+```
+
+#Filtre sur la catégorie "Bien" en partant de la variable castorus_table
+```{r}
+castorus_dtable <- read.csv(file = "castorus_table.csv")
+
+castorus_dtable <- castorus_dtable %>% 
+  mutate(ville = as.character(ville))
+
+# Preprocessing : we keep only real estate in the inner Paris (loss = 31344 - 17189 = 14155 flats)
+to_keep <- grep("Paris",castorus_dtable$ville, value = FALSE)
+castorus_dtable <- castorus_dtable[c(to_keep),]
+  
+
+#Filter on price
+
+step_prix <- function(min,max){
+  castorus_dtable %>% 
+    filter(prix %in% c(min:max)) %>% 
+    filter()
+  return(castorus_dtable)
+}
+
+#Filter on neighborhood
+
+step_arrondissement <- function(A){
+  castorus_dtable <- castorus_dtable[str_detect(castorus_dtable$ville,A),]
+  return(castorus_dtable)
+}
+
+
+```
+
