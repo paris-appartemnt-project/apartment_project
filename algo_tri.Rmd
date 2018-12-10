@@ -16,6 +16,7 @@ library(plyr)
 library(dplyr)
 library(ggvis)
 library(knitr)
+library(geosphere)
 options(digits = 4)
 ```
 
@@ -23,38 +24,174 @@ options(digits = 4)
 ```{r}
 metro_loc <- read.csv2("stations.csv") # je prends le métro en attendant la géoloc des biens
 
-coordinates <- metro_loc %>%  select(metro_loc = Geo.Point)
-coordinates
+#coordinates <- metro_loc %>%  select(metro_loc = Geo.Point)
+#coordinates
 ```
 
 #Filtre sur la catégorie "Bien" en partant de la variable castorus_table
 ```{r}
-castorus_dtable <- read.csv(file = "castorus_table.csv")
+castorus_dtable <- read.csv(file = "castorus_data_final.csv")
 
-castorus_dtable <- castorus_dtable %>% 
-  mutate(ville = as.character(ville))
+# cleaning arrondissement
+clean_arr <- function(arrondissement) {
+  arr <- substr(arrondissement, 1, 2)
+  arr <- sub("e","", arr)
+  arr <- as.integer(arr)
+  return(arr)
+} 
 
-# Preprocessing : we keep only real estate in the inner Paris (loss = 31344 - 17189 = 14155 flats)
-to_keep <- grep("Paris",castorus_dtable$ville, value = FALSE)
-castorus_dtable <- castorus_dtable[c(to_keep),]
-  
+castorus_dtable$arrondissement <- clean_arr(castorus_dtable$arrondissement)
 
-#Filter on price
 
-step_prix <- function(min,max){
-  castorus_dtable %>% 
-    filter(prix %in% c(min:max)) %>% 
-    filter()
-  return(castorus_dtable)
+#Filter on the real estate characteristics (price,surface,number of rooms, neighborhood) 
+step_re <- function(price,surface,N,rooms){
+  castorus_dtable <- castorus_dtable %>% 
+    filter(prix %in% c(price[1]:price[2])) %>% 
+    filter(m2 %in% c(surface[1]:surface[2])) %>% 
+    filter(piec.%in% rooms[1:length(rooms)]) %>% 
+    filter(arrondissement %in% N)
+    return(castorus_dtable)
 }
 
-#Filter on neighborhood
+#Example : price in [300000,600000] € ; surface in [20,60] m2 ; in the 10th or 11th neighborhood; 1,3,4 rooms
+rooms <- c(1,4,3)
+N <- c(10,11)
+N <- as.character(N)
+price <- c(300000,600000)
+surface <- c(20,60)
+cast_filtered <- step_re(price,surface,N,rooms)
 
-step_arrondissement <- function(A){
-  castorus_dtable <- castorus_dtable[str_detect(castorus_dtable$ville,A),]
-  return(castorus_dtable)
+
+
+```
+
+#Filtre sur la catégorie environnement 
+```{r}
+stores <- read_csv2(file = "stores_clean.csv")
+
+
+
+# Obtain the longitude and latitude of all restaurants, bars, discotheques in Paris
+keepradius <- function(data) { 
+z <- strsplit(as.character(data$XY),',')
+z <- matrix(unlist(z), ncol=2, byrow= TRUE)
+z <- as.data.frame(z)
+z <- cbind(z)
+colnames(z) <- c('latitude','longitude')
+z <- data.frame(z) 
+return(z)
+}
+
+# Creating a function to consider all occurences of a certain object in a radius of 500m from home 
+
+radius500 <- function (z) {
+home <- c(48.8535578,2.341526)# place Saint-Michel
+
+z$latitude <- as.numeric(levels(z$latitude))[z$latitude]
+z$longitude <- as.numeric(levels(z$longitude))[z$longitude]
+z <- as.matrix(z)
+z <- distm(z, home, fun=distGeo)
+z <- z <= 500
+z <- colSums(z, na.rm = TRUE)
+z <- data.frame(z)
+return(z)
+}
+
+View(home)
+
+# Function to find all restaurants, bars, discotheques 500m from home : combining keepradius and radius500.
+rest_500_home <- function(stores) {
+  anime_festif <- unique(stores$`LIBELLE ACTIVITE`)
+  anime_festif <- c(anime_festif[1],anime_festif[2],anime_festif[16],anime_festif[21],anime_festif[29],anime_festif[41],
+                  anime_festif[47],anime_festif[49],anime_festif[114],anime_festif[139],anime_festif[146],anime_festif[166],
+                  anime_festif[169],anime_festif[185])
+  categ_keep <- stores$`LIBELLE ACTIVITE` %in% anime_festif
+  restaurants <- stores[categ_keep,]
+  coord_restaurants <- keepradius(restaurants)
+  restaurants <- radius500(coord_restaurants)
+  
+  colnames(restaurants) <- (" Restaurants @ 500m")
+  return (restaurants)
+}
+
+# Nombre de restaurants, bars, discotheques à 500m de la place Saint-Michel 
+rest_500_home(stores)
+
+
+```
+
+
+```{r}
+#Index_anime : attendre Benjamin coord
+
+
+```
+
+
+
+```{r}
+commerce <- read_csv2("stores.csv")
+
+commerce_500_home <- function(commerce) {
+  commerce_string <- c("Boucherie", "Pâtisserie","Tabac","Produits", "alimentaires bio et nature", "Alimentation générale", "Supermarché" , "Supérette", "Crèmerie - Fromagerie","Poissonnerie", "Monoprix", "Parapharmacie", "Hypermarché")
+  categ_keep <- stores$`LIBELLE ACTIVITE` %in% commerce_string
+  commerce <- stores[categ_keep,]
+  coord_commerce <- keepradius(commerce)
+  commerce_prox <- radius500(coord_commerce)
+  
+  colnames(commerce_prox) <- (" commerce @ 500m")
+  return (commerce_prox)
+}
+
+commerce_500_home(commerce)
+```
+
+
+Cinema 
+```{r}
+cinema <- read_csv2(file = "cinemas.csv")
+
+# cinema_detect <- function(cinema){
+#    colnames(cinema)[8] <- c("XY")
+# }
+
+cinema_500_home <- function(cine) {
+  colnames(cinema)[8] <- c("XY")
+  coord_cinema <- keepradius(cine)
+  cinema_prox <- radius500(coord_cinema)
+  
+  colnames(cinema_prox) <- (" cinema @ 500m")
+  return (cinema_prox)
+}
+
+cinema_500_home(cinema)
+
+
+
+```
+
+Schools
+```{r}
+schools <- read_csv2(file = "schools.csv")
+
+cinema_detect <- function(schools){
+   colnames(schools)[8] <- c("XY")
+   
+}
+
+```
+
+
+Velib
+```{r}
+Velib <- read_csv2(file = "velib.csv")
+
+cinema_detect <- function(schools){
+   colnames(schools)[8] <- c("XY")
+   
 }
 
 
 ```
+
 
