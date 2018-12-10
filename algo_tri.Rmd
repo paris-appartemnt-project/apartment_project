@@ -97,14 +97,13 @@ z <- data.frame(z)
 return(z)
 }
 
-View(home)
 
 # Function to find all restaurants, bars, discotheques 500m from home : combining keepradius and radius500.
-rest_500_home <- function(stores) {
-  anime_festif <- unique(stores$`LIBELLE ACTIVITE`)
-  anime_festif <- c(anime_festif[1],anime_festif[2],anime_festif[16],anime_festif[21],anime_festif[29],anime_festif[41],
-                  anime_festif[47],anime_festif[49],anime_festif[114],anime_festif[139],anime_festif[146],anime_festif[166],
-                  anime_festif[169],anime_festif[185])
+rest_500 <- function(stores) {
+
+  anime_festif <- c("Restaurant européen", "Bar ou Café sans tabac","Restaurant traditionnel français","Restaurant indien, pakistanais et Moyen Orient", "Restaurant asiatique", "Brasserie - Restauration continue sans tabac",
+                  "Restauration rapide assise", "Restauration rapide debout", "Discothèque et club privé","Brasserie - Restauration continue avec tabac","Restaurant central et sud américain","Restaurant maghrébin", "Restaurant antillais", "Restaurant africain")
+  
   categ_keep <- stores$`LIBELLE ACTIVITE` %in% anime_festif
   restaurants <- stores[categ_keep,]
   coord_restaurants <- keepradius(restaurants)
@@ -115,24 +114,20 @@ rest_500_home <- function(stores) {
 }
 
 # Nombre de restaurants, bars, discotheques à 500m de la place Saint-Michel 
-rest_500_home(stores)
+rest_500(stores)
 
 
 ```
 
 
+Commerces de proximité
 ```{r}
-#Index_anime : attendre Benjamin coord
 
-
-```
-
-
-
-```{r}
 commerce <- read_csv2("stores.csv")
 
-commerce_500_home <- function(commerce) {
+#Fonction pour trouver tous les commerces de proximité à moins de 500m de la maison: combine keepraiduset radius 500.
+ 
+commerce_500 <- function(commerce) {
   commerce_string <- c("Boucherie", "Pâtisserie","Tabac","Produits", "alimentaires bio et nature", "Alimentation générale", "Supermarché" , "Supérette", "Crèmerie - Fromagerie","Poissonnerie", "Monoprix", "Parapharmacie", "Hypermarché")
   categ_keep <- stores$`LIBELLE ACTIVITE` %in% commerce_string
   commerce <- stores[categ_keep,]
@@ -143,7 +138,9 @@ commerce_500_home <- function(commerce) {
   return (commerce_prox)
 }
 
-commerce_500_home(commerce)
+# Nombre de commerce de proximité à 500m de la place Saint-Michel 
+
+commerce_500(commerce)
 ```
 
 
@@ -151,20 +148,19 @@ Cinema
 ```{r}
 cinema <- read_csv2(file = "cinemas.csv")
 
-# cinema_detect <- function(cinema){
-#    colnames(cinema)[8] <- c("XY")
-# }
+#Fonction pour trouver tous les cinémas à moins de 500m de la maison: combine keepraiduset radius 500.
 
-cinema_500_home <- function(cine) {
-  colnames(cinema)[8] <- c("XY")
+cinema_500 <- function(cine) {
+  colnames(cine)[8] <- c("XY")
   coord_cinema <- keepradius(cine)
   cinema_prox <- radius500(coord_cinema)
-  
   colnames(cinema_prox) <- (" cinema @ 500m")
   return (cinema_prox)
 }
 
-cinema_500_home(cinema)
+# Nombre de cinémas à moins de 500m de la place Saint-Michel 
+
+cinema_500(cinema)
 
 
 
@@ -174,22 +170,68 @@ Schools
 ```{r}
 schools <- read_csv2(file = "schools.csv")
 
-cinema_detect <- function(schools){
-   colnames(schools)[8] <- c("XY")
+#Fonction pour trouver tous les écoles à moins de 500m de la maison: combine keepraiduset radius 500.
+
+school_500 <- function(schools){
+  colnames(schools)[8] <- c("XY")
+  coord_schools <- keepradius(schools)
+  schools_prox <- radius500(coord_schools)
+  colnames(schools_prox) <- (" schools @ 500m")
+  return (schools_prox)
    
 }
+
+# Nombre d'écoles à moins de 500m de la place Saint-Michel 
+
+school_500(schools)
 
 ```
 
 
 Velib
 ```{r}
-Velib <- read_csv2(file = "velib.csv")
+velib <- read_csv2(file = "velib.csv")
 
-cinema_detect <- function(schools){
-   colnames(schools)[8] <- c("XY")
+#Fonction pour trouver toutes les stations de velib à moins de 500m de la maison: combine keepraidus et radius 500.
+
+velib_500 <- function(velib){
+  colnames(velib)[6] <- c("XY")
+  coord_velib <- keepradius(velib)
+  velib_prox <- radius500(coord_velib)
+  colnames(velib_prox) <- (" velib @ 500m")
+  return (velib_prox)
    
 }
+
+# Nombre de stations velib à moins de 500m de la place Saint-Michel 
+
+velib_500(velib)
+
+
+```
+
+Metro
+```{r}
+stations <- read_csv2("stations.csv")
+
+#Fonction pour trouver toutes les stations de métro à moins de 500m de la maison: combine keepraidus et radius 500.
+
+stations_500 <- function(stations){
+  colnames(stations)[1] <- c("XY")
+  stations <- stations %>% 
+    filter(METRO == 1)
+  
+  coord_stations <- keepradius(stations)
+  stations_prox <- radius500(coord_stations)
+  colnames(stations_prox) <- (" stations @ 500m")
+  return (stations_prox)
+   
+}
+
+# Nombre de stations métro à moins de 500m de la place Saint-Michel 
+
+stations_500(stations)
+
 
 
 ```
