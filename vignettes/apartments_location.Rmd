@@ -1,0 +1,70 @@
+---
+title: "Apartments location"
+author: "Benjamin Sinturel"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Apartments location}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+```{r include = FALSE}
+library(googleway)
+library(purrr)
+library(dplyr)
+library(apartment.paris)
+```
+
+The exact location of the apartment is not necessarily written in the description of the apartment. Thus we have to describe a process to locate the apartments for rent. 
+
+Depending on the type of the information available in the description, we implement different strategies :  
+
+- if we know the number and the street of the apartment, we thus determine the latitude and the longitude of the apartment by using `google_geocode` from the library `googleway`. It sends a request to Google maps that gives the coordinates. 
+
+```{r}
+#location_comp("12", "rue de Courcelles")
+```
+  
+- if we only know the name of the street of the apartment, we obtain the coordinates of the half of the street. If we know more than one street, we obtain the average coordinates of half of the streets. 
+
+```{r}
+#location_street("rue de Courcelles")
+```
+  
+- if we only know the name of the nearest metro, we obtain the coordinates of the metro. If we have more than one metro station, we obtain the the average coordinates of all the stations. 
+
+```{r}
+#location_metro("Saint-Philippe-du-Roule")
+```
+
+- if we know both the nearest metro and the name of the street of the apartment, we obtain the average coordinates. We can have several metro stations and streets. 
+
+
+```{r}
+#location_metro_street("Saint-Philippe-du-Roule", "rue de Courcelles")
+```
+  
+Then, we created a function that gives the longitude and latitude of the apartment according to the available information. By construction of the dataframe used, if an information is not available, its value is `NA`. 
+
+```{r}
+#location_apartment(num= NA, street ="rue de Courcelles", metro = "Saint-Philippe-du-Roule")
+```
+
+Eventually, the `get_coordinate` function ads the latitude and the longitude of the apartment to the dataframe containing all the ads. 
+
+```{r}
+#url <- "https://www.castorus.com/s/Paris,51185,2-1---70001-80000"
+#castorus_data <- get_dataframe(url)
+#castorus_data <- clean_dataframe(castorus_data)
+#get_coordinate(castorus_data)
+```
+

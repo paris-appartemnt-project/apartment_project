@@ -1,0 +1,45 @@
+Package: apartment.paris
+Title: Code to Find the Best Apartment to Buy in Paris
+Version: 0.0.0.9000
+Authors@R: c(person(given = "Benjamin",
+           family = "Sinturel",
+           role = c("aut", "cre"),
+           email = "benjamin.sinturel@polytechnique.edu"), 
+      person(given = "Alexis", 
+           family = "Lancien", 
+           role = c("aut"), 
+           email = "alexis.lancien@polytechnique.edu"),
+      person(given = "Benjamin",
+           family = "Pick",
+           role = c("aut"),
+           email = "benjamin.pick@polytechnique.edu"), 
+      person(given = "Pierre-Olivier",
+           family = "Donnat",
+           role = c("aut"),
+           email = "pierre-olivier.donnat@polytechnique.edu"), 
+      person(given = "Hassan",
+           family = "Lantry",
+           role = c("aut"),
+           email = "hassan.lantry@polytechnique.edu"))
+Description: This package helps you to find the apartment of your dream in Paris. According to a certain number of criteria (intrinsic features of the apartment but also its environment : schools, shops, bars, cinemas... ), it determines the apartment you would better buy.
+Depends: R (>= 3.5.0)
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    rvest,
+    magrittr,
+    data.table,
+    tidyr,
+    purrr,
+    dplyr,
+    xml2,
+    stringr,
+    googleway,
+    geosphere,
+    stats
+RoxygenNote: 6.1.1
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

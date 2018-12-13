@@ -1,0 +1,82 @@
+---
+title: "Scoring Algorithm"
+author: "Benjamin Sinturel"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Scoring Algorithm}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r include = FALSE}
+library(knitr)
+library(dplyr)
+library(apartment.paris)
+```
+
+# Preprocessing 
+
+Before scoring the apartment according to a certain number of caracteristics of the neighbourhood, it is necessary to collect and preprocess the data. The data available in this package is already preprocessed. All the data has been collected from opendataParis except the metro stations information which was gathered from the RATP.
+
+To facilitate further explorations, we divided into two columns (longitude and latitude) the coordinates for each location and convert these coordinates into characters. 
+
+This is the data used in the package (in addition to the data scraped from castorus)
+- `cinemas`: cinemas in Paris 
+- `stations` : metro stations in Paris  
+- `squares` : squares and parcs in Paris 
+- `commerces`: neighbourhood stores in Paris. We only kept Boucherie, Pâtisserie, Tabac,Produits, Alimentaires bio et nature, Alimentation générale, Supermarché, Supérette, Crèmerie - Fromagerie,Poissonnerie, Monoprix, Parapharmacie and Hypermarché from the `stores`data. 
+- `restaurants`: restaurants and bars in Paris. We only keep Restaurant européen, Bar ou Café sans tabac,Restaurant traditionnel français,Restaurant indien, pakistanais et Moyen Orient, Restaurant asiatique, Brasserie - Restauration continue sans tabac, Restauration rapide assise, Restauration rapide debout, Discothèque et club privé,Brasserie - Restauration continue avec tabac,Restaurant central et sud américain, Restaurant maghrébin, Restaurant antillais, Restaurant africain from the `stores` data. 
+
+Those are the functions used to create the last two database.
+
+
+#commerces <- function(stores){
+    commerce_string <- c("Boucherie", "Pâtisserie","Tabac","Produits", "alimentaires bio et nature", "Alimentation générale", "Supermarché" , "Supérette", "Crèmerie - Fromagerie","Poissonnerie", "Monoprix", "Parapharmacie", "Hypermarché")
+  categ_keep <- stores$`LIBELLE.ACTIVITE` %in% commerce_string
+  commerce <- stores[categ_keep,]
+  commerce <- commerce %>% 
+      separate(XY,into = c("latitude","longitude"),sep = "[(,)]",remove = TRUE)
+}
+#kable(head(commerces(stores)))
+
+
+
+
+
+restaurants <- function(stores){
+    restaurant_string <- c("Restaurant européen", "Bar ou Café sans tabac","Restaurant traditionnel français","Restaurant indien, pakistanais et Moyen Orient", "Restaurant asiatique", "Brasserie - Restauration continue sans tabac",
+                  "Restauration rapide assise", "Restauration rapide debout", "Discothèque et club privé","Brasserie - Restauration continue avec tabac","Restaurant central et sud américain","Restaurant maghrébin", "Restaurant antillais", "Restaurant africain")
+  categ_keep <- stores$`LIBELLE.ACTIVITE` %in% restaurant_string
+  restaurants <- stores[categ_keep,]
+  restaurants <- restaurants %>% 
+    separate(XY,into = c("latitude","longitude"),sep = "[(,)]",remove = TRUE) 
+ return(restaurants)
+}
+
+#kable(head(restaurants(stores)))
+
+
+
+# Ranking the apartments 
+
+We then ranked the apartments according to their proximity to a specific criterion. For instance, we compute for each apartment we compute the number of cinemas that are 500m from the apartment and rank them according to the number of cinemas. Then, the apartment with the rank 1 is the apartment that is the best located if we consider that having cinemas nearby is important. 
+
+
+kable(caption = "Ranking the apartments according to their proximity to cinemas", head(get_rank(cinemas, 500)))
+```
+
+The huge number of restaurants and bars in Paris does not allow us to implement the same process (the time of computations would be to important). Then we decided to divide Paris in 100 clusters using kmeans algorithm. And then compute the number of clusters 500 meters from the apartment and then we associate the number of bars and restaurants in that cluster to the apartment and then rank the apartments according to the number of bars and restaurants. 
+
+
+kable(caption = "Ranking the apartments according to their proximity to restaurants and bars", head(get_rank_restaurants(restaurants,500)))
+```
+
+
