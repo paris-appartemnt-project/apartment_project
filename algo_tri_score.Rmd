@@ -1,0 +1,367 @@
+---
+title: "Algorithme de tri"
+author: "Alexis Lancien"
+date: "5 décembre 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rvest)
+library(stringr)
+library(plyr)
+library(dplyr)
+library(ggvis)
+library(knitr)
+library(geosphere)
+library(tidyverse)
+library(plyr)
+options(digits = 4)
+```
+
+#Creation d'un vecteur de coordonnées pour les biens, travail sur 1132 biens 
+```{r}
+metro_loc <- read.csv2("stations.csv") # je prends le métro en attendant la géoloc des biens
+
+#coordinates <- metro_loc %>%  select(metro_loc = Geo.Point)
+#coordinates
+```
+
+#Filtre sur la catégorie "Bien" en partant de la variable castorus_table
+```{r}
+castorus_dtable <- read.csv(file = "castorus_data_final.csv")
+
+# cleaning arrondissement
+clean_arr <- function(arrondissement) {
+  arr <- substr(arrondissement, 1, 2)
+  arr <- sub("e","", arr)
+  arr <- as.integer(arr)
+  return(arr)
+} 
+
+castorus_dtable$arrondissement <- clean_arr(castorus_dtable$arrondissement)
+
+
+#Filter on the real estate characteristics (price,surface,number of rooms, neighborhood) 
+step_re <- function(price,surface,N,rooms){
+  castorus_dtable <- castorus_dtable %>% 
+    filter(prix %in% c(price[1]:price[2])) %>% 
+    filter(m2 %in% c(surface[1]:surface[2])) %>% 
+    filter(piec.%in% rooms[1:length(rooms)]) %>% 
+    filter(arrondissement %in% N)
+    return(castorus_dtable)
+}
+
+#Example : price in [300000,600000] € ; surface in [20,60] m2 ; in the 10th or 11th neighborhood; 1,3,4 rooms
+rooms <- c(1,4,3)
+N <- c(10,11)
+N <- as.character(N)
+price <- c(300000,600000)
+surface <- c(20,60)
+cast_filtered <- step_re(price,surface,N,rooms)
+
+
+
+```
+
+```{r}
+stores <- read_csv2(file = "stores_clean.csv")
+stores <- keepradius(stores)
+
+anime_festif <- c("Restaurant européen", "Bar ou Café sans tabac","Restaurant traditionnel français","Restaurant indien, pakistanais et Moyen Orient", "Restaurant asiatique", "Brasserie - Restauration continue sans tabac",
+                  "Restauration rapide assise", "Restauration rapide debout", "Discothèque et club privé","Brasserie - Restauration continue avec tabac","Restaurant central et sud américain","Restaurant maghrébin", "Restaurant antillais", "Restaurant africain")
+
+restaurants_cluster <- stores[stores$`LIBELLE ACTIVITE` %in% anime_festif,]
+
+restaurants_cluster <- restaurants_cluster %>%
+  filter(latitude != is.na(latitude)) %>%
+  filter(longitude != is.na(longitude))
+
+coord_rest <- data.frame(longitude = restaurants_cluster$longitude, latitude = restaurants_cluster$latitude)
+
+
+k3 <- kmeans(coord_rest, centers = 100, nstart = 100)
+
+
+ggplot(coord_rest[,1:2], aes(x=longitude, y=latitude, color=as.factor(k3$cluster))) + geom_point()
+
+coord_centers <- k3$centers
+nb_rep_cluster <- k3$size
+```
+
+#Filtre sur la catégorie environnement 
+```{r}
+stores <- read_csv2(file = "stores_clean.csv")
+homes <- read_csv(file = "coord_home.csv")
+
+# creating two columns for latitude and longitude
+keepradius <- function(data) { 
+  z <-data %>% 
+  separate(XY,into = c("latitude","longitude"),sep = "[(,)]",remove = TRUE)
+  return(z)
+}
+
+
+# Creating a function for the coordinates of the goods
+coordonnees_fct <- function(homes){
+   colnames(homes)[5:6] <- c('latitude','longitude')
+    homes <- homes %>% 
+      filter(latitude != is.na(latitude)) %>%
+      filter(longitude != is.na(longitude)) %>% 
+      select(longitude,latitude)
+
+    return(homes)
+  
+}
+
+home <- coordonnees_fct(homes)
+
+
+restaurants_500 <- function(stores) {
+
+  stores <- keepradius(stores)
+   
+  anime_festif <- c("Restaurant européen", "Bar ou Café sans tabac","Restaurant traditionnel français","Restaurant indien, pakistanais et Moyen Orient", "Restaurant asiatique", "Brasserie - Restauration continue sans tabac",
+                  "Restauration rapide assise", "Restauration rapide debout", "Discothèque et club privé","Brasserie - Restauration continue avec tabac","Restaurant central et sud américain","Restaurant maghrébin", "Restaurant antillais", "Restaurant africain")
+  
+  categ_keep <- stores$`LIBELLE ACTIVITE` %in% anime_festif
+  restaurants <- stores[categ_keep,]
+  home <- coordonnees_fct(homes)
+  
+  matrix_coord_rest <- cbind(restaurants$longitude,restaurants$latitude)
+  distance_home_rest <- distm(coord_centers, home, fun=distGeo)
+  df_rest <- data.frame(nb_rest = nb_rep_cluster, apartment = distance_home_rest)
+  df_rest[,-1] <- as.numeric(df_rest[,-1] < 500)*(df_rest$nb_rest)
+  
+  count_rest_500 <- colSums(df_rest[,-1])
+  
+  df_scoring_rest <- data.frame(apartment_index = 1:nrow(home), restaurant = count_rest_500)
+  df_scoring_rest <-  df_scoring_rest %>% 
+    arrange(desc(restaurant)) %>% 
+    mutate(restaurant = 1:nrow(home))
+  
+
+  return(df_scoring_rest)
+}
+
+# Nombre de restaurants, bars, discotheques à 500m de la place Saint-Michel 
+
+
+df_restaurant <- restaurants_500(stores)
+
+
+```
+
+Commerces de proximité
+```{r}
+
+commerce <- read_csv2("stores.csv")
+
+#Fonction pour trouver tous les commerces de proximité à moins de 500m de la maison
+ 
+commerce_500 <- function(commerce) {
+  commerce_string <- c("Boucherie", "Pâtisserie","Tabac","Produits", "alimentaires bio et nature", "Alimentation générale", "Supermarché" , "Supérette", "Crèmerie - Fromagerie","Poissonnerie", "Monoprix", "Parapharmacie", "Hypermarché")
+  
+  home <- coordonnees_fct(homes)
+
+  categ_keep <- stores$`LIBELLE ACTIVITE` %in% commerce_string
+  commerce <- stores[categ_keep,]
+  coord_commerce <- keepradius(commerce)
+  
+  matrix_coord_commerce <- cbind(coord_commerce$longitude,coord_commerce$latitude)
+  distance_home_commerce <- distm(matrix_coord_rest, home, fun=distGeo)
+  distance_home_commerce <- data.frame(apartment = distance_home_commerce)
+ 
+  distance_home_commerce <- distance_home_commerce < 200 
+  count_commerce_500 <- colSums(distance_home_commerce)
+   df_scoring <- data.frame(apartment_index = 1:nrow(home), commerce = count_commerce_500 )
+   df_scoring <-  df_scoring %>% 
+    arrange(desc(commerce)) %>% 
+    mutate(commerce = 1:nrow(home))
+  
+
+  return (df_scoring)
+}
+
+# Nombre de commerce de proximité à 500m de la place Saint-Michel 
+df_commerce <- commerce_500(commerce)
+
+```
+
+
+Cinema 
+```{r}
+cinema <- read_csv2(file = "cinemas.csv")
+
+#Fonction pour trouver tous les cinémas à moins de 500m de la maison
+
+criterion_500 <- function(dataframe) {
+  
+  home <- coordonnees_fct(homes)
+
+  colnames(dataframe)[8] <- c("XY")
+  coord <- keepradius(dataframe)
+  coord <- coord %>%
+      filter(latitude != is.na(latitude)) %>%
+      filter(longitude != is.na(longitude))
+
+  matrix_coord <- cbind(coord$longitude,coord$latitude)
+  distance_home <- distm(matrix_coord, home, fun=distGeo)
+  distance_home <- data.frame(apartment = distance_home)
+  distance_home <- distance_home < 500
+  count_criterion_500 <- colSums(distance_home)
+  
+   
+  return (count_criterion_500)
+}
+
+crit_500  <- function (result_criterion,dataframe){
+  
+  home <- coordonnees_fct(homes)
+  df_scoring <- cbind(1:nrow(home), result_criterion(dataframe))
+  df_scoring <- as.data.frame(df_scoring)
+  
+  df_scoring <-  df_scoring %>% 
+   arrange(desc(V2)) %>% 
+   mutate(V2 = 1:nrow(home))
+  n_col <- deparse(substitute(dataframe))
+  colnames(df_scoring) <- c("apartment_index",n_col)
+
+
+return(df_scoring)
+}
+ 
+df_cinema <- crit_500(criterion_500,cinema)
+```
+
+Schools
+```{r}
+schools <- read_csv2(file = "schools.csv")
+
+
+#Fonction pour trouver tous les écoles à moins de 500m de la maison
+
+df_schools <- crit_500(criterion_500,schools)
+
+
+
+```
+
+
+Metro
+```{r}
+stations <- read_csv2("stations.csv")
+
+#Fonction pour trouver toutes les stations de métro à moins de 500m de la maison 
+
+stations_500 <- function(stations){
+  colnames(stations)[1] <- c("XY")
+  home <- coordonnees_fct(homes)
+
+  stations <- stations %>% 
+  filter(METRO == 1)
+  
+  coord <- keepradius(stations)
+  coord <- coord %>%
+      filter(latitude != is.na(latitude)) %>%
+      filter(longitude != is.na(longitude))
+  
+  matrix_coord <- cbind(coord$longitude,coord$latitude)
+  distance_home <- distm(matrix_coord, home, fun=distGeo)
+  distance_home <- data.frame(apartment = distance_home)
+  distance_home <- distance_home < 500 
+  count_criterion_500 <- colSums(distance_home)
+  return (count_criterion_500)
+}
+
+df_stations <- crit_500(stations_500,stations)
+
+
+
+
+
+
+```
+
+Scoring
+```{r}
+criminality<- read_csv("criminalite.csv")
+
+
+
+```
+
+Scoring : step 1: goods ranked among all categories from top to bottom 
+```{r}
+df_restaurant
+df_commerce
+df_cinema
+df_schools
+df_stations
+
+
+#list_df(df_restaurant,df_commerce,df_cinema,df_schools,df_stations)
+
+```
+
+Step 2: Ranking of goods by quantile for all categories
+```{r}
+#Given the user input, the dataframes from 1 to 5 are taken or not into account into the scoring. The take variables are 0 or 1.
+
+df_list_tables <- function(df_restaurant,df_commerce,df_cinema,df_schools,df_stations) {
+  
+  df <- list(df_restaurant,df_commerce,df_cinema,df_schools,df_stations)
+  return(df)
+}
+
+omit_choice <- function(take_anim=1,take_commerce=1,take_schools=1,take_stations=1){
+    omit <- data.frame(anim = take_anim,com =take_commerce,school =take_schools,
+                       metro =take_stations)
+    
+    return(omit)
+
+}
+
+
+# I join all the dataframes with the ranking of the goods for characteristics restaurants, commerce, cinema,schools and stations. I then rank the apartments for 4 categories 1)schools, 2)stations, 3) restaurants + cinema, 4) commerce. Then, I take the quantiles of the apartments for the 4 categories
+
+join_dataframe <- function(df,omit){
+  
+df_scoring <- join_all(df[1:5], type = "inner")
+
+group_quantiles <- function(x) {
+  qq<-cut(x, breaks=seq(min(x),max(x), length.out=11), include.lowest=T, labels=F)
+  return(qq)
+  
+}
+
+
+df_scoring <- df_scoring %>% 
+  mutate(anime_resto_cine = restaurant + cinema) %>% 
+  select(-cinema,-restaurant) %>% 
+  mutate(apartment_index = as.character(apartment_index)) %>% 
+  mutate_if(is.integer,funs(qt = ./nrow(df_scoring))) %>% 
+  mutate_if(is.double, funs(group_quantiles))%>% 
+  mutate(score = (omit$anim)*anime_resto_cine_qt + (omit$com)*commerce_qt + (omit$school)*schools_qt +
+                     (omit$metro)*stations_qt)
+  
+return(df_scoring)
+}
+
+best_re <- function(score_df){
+  df_best <-  score_df[1:10,]
+  df_best <- df_best %>% 
+    select(apartment_index)
+  return(df_best)
+  
+}
+
+df_scoring_final <- join_dataframe(df_choice_user(df_restaurant,df_commerce,df_cinema,df_schools,df_stations),omit_choice(0,1,1,0))
+
+best_10_re <- best_re(join_dataframe(df_choice_user(df_restaurant,df_commerce,df_cinema,df_schools,df_stations),omit_choice(0,1,1,0)))
+
+```
+
