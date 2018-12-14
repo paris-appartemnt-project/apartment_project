@@ -16,12 +16,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r include = FALSE}
-library(knitr)
-library(dplyr)
-library(apartment.paris)
-```
-
 # Preprocessing 
 
 Before scoring the apartment according to a certain number of caracteristics of the neighbourhood, it is necessary to collect and preprocess the data. The data available in this package is already preprocessed. All the data has been collected from opendataParis except the metro stations information which was gathered from the RATP.
@@ -31,79 +25,35 @@ To facilitate further explorations, we divided into two columns (longitude and l
 This is the data used in the package (in addition to the data scraped from castorus)
 - `cinemas`: cinemas in Paris 
 - `stations` : metro stations in Paris  
-- `squares` : squares and parcs in Paris 
 - `commerces`: neighbourhood stores in Paris. We only kept Boucherie, Pâtisserie, Tabac,Produits, Alimentaires bio et nature, Alimentation générale, Supermarché, Supérette, Crèmerie - Fromagerie,Poissonnerie, Monoprix, Parapharmacie and Hypermarché from the `stores`data. 
-- `restaurants`: restaurants and bars in Paris. We only keep Restaurant européen, Bar ou Café sans tabac,Restaurant traditionnel français,Restaurant indien, pakistanais et Moyen Orient, Restaurant asiatique, Brasserie - Restauration continue sans tabac, Restauration rapide assise, Restauration rapide debout, Discothèque et club privé,Brasserie - Restauration continue avec tabac,Restaurant central et sud américain, Restaurant maghrébin, Restaurant antillais, Restaurant africain from the `stores` data. 
+- `restaurants`: restaurants and bars in Paris. We only keep Restaurant européen, Bar ou Café sans tabac,Restaurant traditionnel français,Restaurant indien, pakistanais et Moyen Orient, Restaurant asiatique, Brasserie - Restauration continue sans tabac, Restauration rapide assise, Restauration rapide debout, Discothèque et club privé,Brasserie - Restauration continue avec tabac,Restaurant central et sud américain, Restaurant maghrébin, Restaurant antillais, Restaurant africain from the `stores` data.
+- `schools` : nursery, elementary and high school in Paris.
 
-Those are the functions used to create the last two database.
 
+The functions used to create the last two databases are `commerce(stores)`, `restaurants(stores)`.
 
-#commerces <- function(stores){
-    commerce_string <- c("Boucherie", "Pâtisserie","Tabac","Produits", "alimentaires bio et nature", "Alimentation générale", "Supermarché" , "Supérette", "Crèmerie - Fromagerie","Poissonnerie", "Monoprix", "Parapharmacie", "Hypermarché")
-  categ_keep <- stores$`LIBELLE.ACTIVITE` %in% commerce_string
-  commerce <- stores[categ_keep,]
-  commerce <- commerce %>% 
-      separate(XY,into = c("latitude","longitude"),sep = "[(,)]",remove = TRUE)
-}
-#kable(head(commerces(stores)))
+`commerce(stores)`takes categories of stores that sell food for the everydaylife, such as bakeries, or supermarkets and discards the other types of stores. It then keeps as output their coordinates given by latitude and longitude. 
 
 
 
 
-
-restaurants <- function(stores){
-    restaurant_string <- c("Restaurant européen", "Bar ou Café sans tabac","Restaurant traditionnel français","Restaurant indien, pakistanais et Moyen Orient", "Restaurant asiatique", "Brasserie - Restauration continue sans tabac",
-                  "Restauration rapide assise", "Restauration rapide debout", "Discothèque et club privé","Brasserie - Restauration continue avec tabac","Restaurant central et sud américain","Restaurant maghrébin", "Restaurant antillais", "Restaurant africain")
-  categ_keep <- stores$`LIBELLE.ACTIVITE` %in% restaurant_string
-  restaurants <- stores[categ_keep,]
-  restaurants <- restaurants %>% 
-    separate(XY,into = c("latitude","longitude"),sep = "[(,)]",remove = TRUE) 
- return(restaurants)
-}
-
-#kable(head(restaurants(stores)))
+`restaurants(stores)` filters all stores that have to do with the nightlife. The purpose is to see if the neighborhoods are lively or not given the densities of restaurants, bars... 
 
 
 
-# Ranking the apartments 
+# Ranking the apartments among categories
 
-We then ranked the apartments according to their proximity to a specific criterion. For instance, we compute for each apartment we compute the number of cinemas that are 500m from the apartment and rank them according to the number of cinemas. Then, the apartment with the rank 1 is the apartment that is the best located if we consider that having cinemas nearby is important. 
-
-
-kable(caption = "Ranking the apartments according to their proximity to cinemas", head(get_rank(cinemas, 500)))
-```
-
-The huge number of restaurants and bars in Paris does not allow us to implement the same process (the time of computations would be to important). Then we decided to divide Paris in 100 clusters using kmeans algorithm. And then compute the number of clusters 500 meters from the apartment and then we associate the number of bars and restaurants in that cluster to the apartment and then rank the apartments according to the number of bars and restaurants. 
+We then ranked the apartments according to their proximity to a specific criterion. For instance, we compute for each apartment the number of cinemas that are 500m from the apartment and rank them according to the number of cinemas. Then, the apartment with the rank 1 is the apartment that is the best located if we consider that having cinemas nearby is important. 
 
 
-kable(caption = "Ranking the apartments according to their proximity to restaurants and bars", head(get_rank_restaurants(restaurants,500)))
-```
 
-Then we can join all those rankings and give weights to the categories that matter for the user. 
 
-```{r}
-join_dataframe <- function(commerces,restaurants,cinemas,schools,stations){
-  
-  df_commerce <- get_rank(commerces,200)
-  df_restaurant <- get_rank(restaurants,500)
-  df_cinema <- get_rank(cinemas,500)
-  df_schools <- get_rank(schools,500) 
-  df_stations <- get_rank(stations,500)
-  df <- list(df_restaurant,df_commerce,df_cinema,df_schools,df_stations)
-  
-  df_scoring <- join_all(df[1:5], type = "inner")
-  
-  
-  df_scoring <- df_scoring %>% 
-    mutate(anime_resto_cine = restaurant + cinema) %>% 
-    select(-cinema,-restaurant) %>% 
-    mutate(apartment_index = as.character(apartment_index)) %>% 
-    mutate_if(is.integer,funs(qt = decile)) %>% 
-    mutate(score = anime_resto_cine_qt + commerce_qt + schools_qt + stations_qt) %>% 
-    arrange(score)
-  
-  return(df_scoring)
-}
+The huge number of restaurants and bars in Paris does not allow us to implement the same process (the time of computations would be to important). Then we decided to divide Paris in 100 clusters using kmeans algorithm. And then compute the number of clusters 500 meters from the apartment and then we associate the number of bars and restaurants in that cluster to the apartment and then rank the apartments according to the number of bars and restaurants. The function to do so is `get_rank_restaurants(dataframe,meters)`
 
-```
+We proceed in the same way with all the other categories, but we don't need to cluster them as the number of representants for each categories is not too large. Thus, for schools, cinema stations, commerce we apply one universal function : `get_rank(dataframe, meters)`.
+
+
+# Scoring by combination of the rankings. 
+
+Then we can join all those rankings with the function `join_dataframe(commerces,restaurants,cinemas,schools,stations)`. To get an index of the livelihood  of a neighborhood, we create a composite variable restaurant/cinema. We then classify the apartments in quantiles for each category, thus assigning them numbers from 1 to 10 (1 being the best score).The final step is to combine the scores for each category and give weights to the categories that matter for the user. 
 
