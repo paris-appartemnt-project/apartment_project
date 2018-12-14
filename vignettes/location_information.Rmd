@@ -16,23 +16,44 @@ knitr::opts_chunk$set(
 )
 ```
 
+When we receive the dataframe of every ads description, we clean the dataframe to get descriptions in lower characters and without any accent,faulty character or any punctuation. 
+
+```{r}
+#clean(annonces)
+```
+
+- If we want to know if a place is present in a description text, match_environnement match places from a dataframe of roads,streets or tube stations with a dataset of ads descriptions. This example takes roads into account. 
+
+```{r}
+#match_environnement <- function("rue de montreuil","extrait de la derniere description au 97 rue de montreuil dans un bel immeuble")
+```
+
+- If we want to know if a place is present in a description text, match_environnement match places from a dataframe of roads,streets or tube stations with a dataset of ads descriptions. This example takes tube stations into account. 
+
+```{r}
+#match_environnement <- function("metro passy","extrait de la derniere description au 4 rue de l'abbe gillet metro passy")
+```
+
+-If an ads description contains a street, we use number to get the number of the street if available by taking the number in front of the word "rue" (street in french) in the description. 
+
+```{r}
+#number <- function(castorus)
+```
+
+-After collecting the extracted information we combines them with the information already present in the data scrapping. 
+In this dataframe we give priority to the data already present from the data scrapping. When this one returns an NA, we fill the void thanks to the extracted data. 
+
+```{r}
+#combine_roads <- function(castorus,roadnames,metros)
+```
 
 
 
-clean <- function(df) {
-  
-  annoncesmini<- tolower(df)
-  #tolower() is a function that transform our characters into lower characters as it is optimal for later use when     coding in R.
-  unwanted_array = list(     'Ž'='Z', 'ž'='z', 'À'='A', 'Á'='A', 'Â'='A', 'Ã'='A', 'Ä'='A', 'Å'='A', 'Æ'='A', 'Ç'='C', 'È'='E', 'É'='E',
-                              'Ê'='E', 'Ë'='E', 'Ì'='I', 'Í'='I', 'Î'='I', 'Ï'='I', 'Ñ'='N', 'Ò'='O', 'Ó'='O', 'Ô'='O', 'Õ'='O', 'Ö'='O', 'Ø'='O', 'Ù'='U',
-                              'Ú'='U', 'Û'='U', 'Ü'='U', 'Ý'='Y', 'Þ'='B', 'ß'='Ss','á'='a',"à"="a", 'â'='a', 'ã'='a', 'ä'='a', 'å'='a', 'æ'='a', 'ç'='c', 
-                           'è'='e', 'é'='e', 'ê'='e', 'ë'='e', 'ì'='i', 'í'='i', 'î'='i', 'ï'='i', 'ð'='o', 'ñ'='n', 'ò'='o', 'ó'='o', 'ô'='o', 'õ'='o', 'ö'='o', 'ø'='o', 'ù'='u', 'ú'='u', 'û'='u', 'ý'='y', 'ý'='y', 'þ'='b', 'ÿ'='y' )
-  #this is a list of all unwanted characters in our text. I will combine later with other function in R to remove all   of them from our text.
-  cleanannonces <- chartr(paste(names(unwanted_array), collapse=''),
-           paste(unwanted_array, collapse=''),
-           annoncesmini) 
-  cleanannonces <- gsub("-", " ", cleanannonces, fixed=TRUE)
-  return(cleanannonces)}
-# In cleanannonces we remove all characters that were unwanted while also getting rid of the punctuation thanks to removePunctuation() function.
+
+
+
+
+
+
 
 

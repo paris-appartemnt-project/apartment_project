@@ -21,6 +21,7 @@ knitr::opts_chunk$set(
 library(googleway)
 library(purrr)
 library(dplyr)
+library(devtools)
 library(apartment.paris)
 ```
 
@@ -40,7 +41,7 @@ Depending on the type of the information available in the description, we implem
 #location_street("rue de Courcelles")
 ```
   
-- if we only know the name of the nearest metro, we obtain the coordinates of the metro. If we have more than one metro station, we obtain the the average coordinates of all the stations. 
+- if we only know the name of the nearest metro, we obtain the coordinates of the metro. If we have more than one metro station, we obtain the average coordinates of all the stations. 
 
 ```{r}
 #location_metro("Saint-Philippe-du-Roule")
@@ -67,4 +68,5 @@ Eventually, the `get_coordinate` function ads the latitude and the longitude of 
 #castorus_data <- clean_dataframe(castorus_data)
 #get_coordinate(castorus_data)
 ```
+
 
