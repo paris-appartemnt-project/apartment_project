@@ -6,6 +6,8 @@
 #' @export
 #' @import dplyr
 coordinates <- function(castorus_table, iconUrl){
-  a <- castorus_data %>% dplyr::select("latitude","longitude") %>% dplyr::mutate(icon = iconUrl)
+  a <- castorus_data %>%
+    dplyr::select("latitude","longitude") %>%
+    dplyr::mutate(icon = iconUrl)
   return(a)
 }

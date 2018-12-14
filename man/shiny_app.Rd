@@ -6,14 +6,6 @@
 \usage{
 shiny_app()
 }
-\arguments{
-\item{input}{input}
-
-\item{output}{output}
-}
-\value{
-shiny app
-}
 \description{
 Run the shiny app
 }
