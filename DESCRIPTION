@@ -37,7 +37,8 @@ Imports:
     stringr,
     googleway,
     geosphere,
-    stats
+    stats,
+    tm
 RoxygenNote: 6.1.1
 Suggests: 
     knitr,

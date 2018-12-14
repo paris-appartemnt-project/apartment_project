@@ -7,12 +7,7 @@
 #' @return dataframe with two columns : latitude and longitude
 #' @export
 #'
-#' @examples
-#' location_apartment(num= "12", street ="rue de Courcelles", metro = "Saint-Philippe-du-Roule")
-#' location_apartment(num= "12", street ="rue de Courcelles", metro = NA)
-#' location_apartment(num= NA, street ="rue de Courcelles", metro = "Saint-Philippe-du-Roule")
-#' location_apartment(num= NA, street ="rue de Courcelles", metro = NA)
-#' location_apartment(num= NA, street = NA, metro = "Saint-Philippe-du-Roule")
+
 location_apartment <- function(num, street, metro){
   if( !is.na(num) & !is.na(street)){
     location_comp(num,street)

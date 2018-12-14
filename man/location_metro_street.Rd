@@ -17,6 +17,3 @@ dataframe with two columns : latitude and longitude
 \description{
 Find the longitude and latitude of an apartment according to the nearest metro station and street
 }
-\examples{
-location_metro_street("Saint-Philippe-du-Roule", "rue de Courcelles")
-}

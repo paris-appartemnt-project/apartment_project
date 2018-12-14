@@ -7,8 +7,6 @@
 #' @export
 #'
 #' @importFrom googleway google_geocode
-#' @examples
-#' localisation_comp("12", "rue de Courcelles")
 location_comp <- function(num,street){
   loc <- google_geocode(paste0(num,street,", Paris, France"), key = my.env$google_key)
   lat <- loc$results$geometry$location$lat

@@ -19,10 +19,3 @@ dataframe with two columns : latitude and longitude
 \description{
 Choose the right function to locate the apartment according to the available information
 }
-\examples{
-location_apartment(num= "12", street ="rue de Courcelles", metro = "Saint-Philippe-du-Roule")
-location_apartment(num= "12", street ="rue de Courcelles", metro = NA)
-location_apartment(num= NA, street ="rue de Courcelles", metro = "Saint-Philippe-du-Roule")
-location_apartment(num= NA, street ="rue de Courcelles", metro = NA)
-location_apartment(num= NA, street = NA, metro = "Saint-Philippe-du-Roule")
-}

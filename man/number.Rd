@@ -15,6 +15,3 @@ dataframe with the apartments and their street numbers
 \description{
 Extracts the street numbers from the description of the apartment
 }
-\examples{
-number(castorus)
-}

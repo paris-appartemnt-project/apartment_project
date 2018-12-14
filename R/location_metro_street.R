@@ -9,7 +9,6 @@
 #' @importFrom purrr map
 #'
 #' @examples
-#' location_metro_street("Saint-Philippe-du-Roule", "rue de Courcelles")
 location_metro_street <- function(metro, street){
   stations <- strsplit(metro,",")
   stations <- paste0(stations,", metro, Paris, France")

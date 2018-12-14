@@ -17,6 +17,3 @@ dataframe with two columns : latitude and longitude
 \description{
 Find the longitude and latitude of an apartment according to its complete address
 }
-\examples{
-localisation_comp("12", "rue de Courcelles")
-}

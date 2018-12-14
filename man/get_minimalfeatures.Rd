@@ -4,27 +4,29 @@
 \alias{get_minimalfeatures}
 \title{Extract the coordinates of the apartments with characteristics asked from the client}
 \usage{
-get_minimalfeatures(price, surface, rooms, N)
+get_minimalfeatures(min_price, max_price, min_surface, max_surface, N,
+  min_room, max_room, castorus_table)
 }
 \arguments{
-\item{price}{range of price of the apartment}
+\item{min_price}{minimum price of the apartment}
 
-\item{surface}{range of surface of the apartment}
+\item{max_price}{maximum price of the apartment}
 
-\item{rooms}{number of rooms in the apartment}
+\item{min_surface}{minimum surface of the apartment}
 
-\item{N}{arrondissement.s in Paris}
+\item{max_surface}{maximum surface of the apartment}
+
+\item{N}{arrondissement in Paris}
+
+\item{min_room}{minimum number of rooms}
+
+\item{max_room}{maximum number of rooms}
+
+\item{castorus_table}{dataframe with the informations}
 }
 \value{
 dataframe with two columns longitude and latitude
 }
 \description{
 Extract the coordinates of the apartments with characteristics asked from the client
-}
-\examples{
-price <- c(300000,600000)
-surface <- c(20,60)
-N <- c(10,11)
-rooms <- c(1,4,3)
-get_minimalfeatures(price, surface, rooms, N)
 }

@@ -1,3 +1,17 @@
+#' Cleans the offers descriptions by removing the unwanted characters and getting rid of the ponctuation
+#'
+#' @param df character
+#'
+#' @return character
+#' @export
+#'
+
+clean <- function(df) {
+
+  annoncesmini<- tolower(df$Description)
+  cleanannonces <- gsub("-", " ", anoncesmini, fixed=TRUE)
+  return(cleanannonces)}
+
 
 #' extracts the roadnames or public transportation stations from the apartment descriptions
 #'
@@ -7,7 +21,6 @@
 #' @return dataframe with the appartments and their streets or stations
 #' @export
 #'
-#' @examples
 match_environnement <- function(places,castorus){
 
   match <- sapply(places, function(x) grepl(x, clean(castorus) ,ignore.case = F ,perl = F,
@@ -24,8 +37,8 @@ match_environnement <- function(places,castorus){
 #'
 #' @return dataframe with the apartments and their street numbers
 #' @export
-#'
-#' @examples number(castorus_data)
+#' @importFrom stringr str_extract
+#' @importFrom tm removeWords
 number <- function(castorus) {
 
   numero_de_rue <- str_extract(castorus$Description, "([\\d]+) rue ")
@@ -46,8 +59,6 @@ number <- function(castorus) {
 #'
 #' @return dataframe with the apartments and their locations coming form the scraping and the extraction from the descriptions
 #' @export
-#'
-#' @examples
 combine_roads <- function(castorus,roadnames,stations) {
   ruepriority <- castorus$rue
   fullextrait <- data.frame(number(castorus),match_environnement(roadnames,castorus),

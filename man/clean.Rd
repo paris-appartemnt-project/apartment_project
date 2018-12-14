@@ -7,15 +7,11 @@
 clean(df)
 }
 \arguments{
-\item{descriptions}{character}
+\item{df}{character}
 }
 \value{
 character
 }
 \description{
 Cleans the offers descriptions by removing the unwanted characters and getting rid of the ponctuation
-}
-\examples{
-annonces<-castorus$Description
-clean(annonces)
 }

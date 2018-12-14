@@ -15,6 +15,3 @@ dataframe with two columns : latitude and longitude
 \description{
 Find the longitude and latitude of an apartment according to its street
 }
-\examples{
-location_street("rue de Courcelles")
-}

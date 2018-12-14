@@ -9,7 +9,6 @@
 #' @importFromd googleway google_geocode
 #'
 #' @examples
-#' location_metro("Saint-Philippe-du-Roule")
 location_metro <- function(metro){
   stations <- strsplit(metro,",")
   stations <- paste0(stations,", metro, Paris, France")

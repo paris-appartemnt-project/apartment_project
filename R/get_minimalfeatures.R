@@ -1,27 +1,24 @@
 #' Extract the coordinates of the apartments with characteristics asked from the client
 #'
-#' @param price range of price of the apartment
-#' @param surface range of surface of the apartment
-#' @param rooms number of rooms in the apartment
-#' @param N arrondissement.s in Paris
+#' @param min_price minimum price of the apartment
+#' @param max_price maximum price of the apartment
+#' @param min_surface minimum surface of the apartment
+#' @param N arrondissement in Paris
+#' @param max_surface maximum surface of the apartment
+#' @param min_room minimum number of rooms
+#' @param max_room maximum number of rooms
+#' @param castorus_table dataframe with the informations
 #'
 #' @return dataframe with two columns longitude and latitude
 #' @export
 #' @import dplyr
-#'
-#' @examples
-#' price <- c(300000,600000)
-#' surface <- c(20,60)
-#' N <- c(10,11)
-#' rooms <- c(1,4,3)
-#' get_minimalfeatures(price, surface, rooms, N)
-get_minimalfeatures <- function(price, surface, rooms, N){
-  N <- as.character(N)
-  castorus_data <- castorus_data %>%
-  filter(prix %in% c(price[1]:price[2])) %>%
-  filter(m2 %in% c(surface[1]:surface[2])) %>%
-  filter(piec.%in% rooms[1:length(rooms)]) %>%
-  filter(arrondissement %in% N) %>%
+get_minimalfeatures <- function(min_price,max_price,min_surface,max_surface,N,min_room,max_room, castorus_table){
+  castorus_table <- castorus_table %>%
+    filter(prix %in% c(min_price:max_price)) %>%
+    filter(m2 %in% c(min_surface:max_surface)) %>%
+    filter(piec.%in% c(min_room:max_room)) %>%
+    filter(arrondissement %in% N) %>%
+    dplyr::select(-titre,-vue.le,-Type) %>%
   filter(latitude != is.na(latitude)) %>%
   filter(longitude != is.na(longitude)) %>%
   select(longitude, latitude)

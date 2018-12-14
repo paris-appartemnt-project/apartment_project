@@ -7,9 +7,6 @@
 #' @import dplyr
 #' @importFrom googleway google_geocode
 #' @importFrom purrr map
-#'
-#' @examples
-#' location_street("rue de Courcelles")
 location_street <- function(street){
   streets <- strsplit(street,",")
   streets <- paste0(streets,", Paris, France")
