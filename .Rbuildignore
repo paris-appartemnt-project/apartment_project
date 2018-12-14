@@ -1,3 +1,5 @@
+^Meta$
+^doc$
 ^\.Rprofile$
 ^LICENSE\.md$
 ^devstuffs\.R$

@@ -7,10 +7,14 @@
 #' @param value Select the column in tri which is going to be filtered.
 #'
 #' @return data frame
+#' @import dplyr
 #' @export
 #'
 filter_slider <- function(castorus_table, tri, min, max, value){
-  temp<- tri %>% dplyr::filter(score_table[,value] %in% c(min:max)) %>% select(X)
-  a <- castorus_data %>% dplyr::filter(X1 %in% temp$X1)
+  temp<- tri %>%
+    dplyr::filter(score_table[,value] %in% c(min:max)) %>%
+    select(X)
+  a <- castorus_data %>%
+    dplyr::filter(X1 %in% temp$X1)
   return(a)
 }

@@ -2,6 +2,7 @@
 #'
 #' @export
 #' @import googleway stringr
+#' @importFrom shiny h3 fluidPage titlePanel sidebarLayout sidebarPanel selectizeInput sliderInput helpText mainPanel reactive shinyApp
 #' @importFrom glue glue
 #' @importFrom DT dataTableOutput
 
@@ -41,17 +42,6 @@ shiny_app <- function() {
   )
 
 
-#' Runs the shiny app
-#'
-#' @param input input
-#' @param output output
-#'
-#' @return shiny app
-#' @export
-#' @import dplyr
-#' @importFrom DT renderDataTable
-#'
-#' @examples
   server <- function(input, output) {
     castorus_data <- castorus_data %>% rename("X" = X1, "Change_price" = c(11)) %>%  dplyr::select(-depuis,-Change_price,lextrait.n)
     score_table <- score_table %>% dplyr::select(-X) %>%  rename("X" = apartment_index)
