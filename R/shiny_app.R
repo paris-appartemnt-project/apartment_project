@@ -2,15 +2,26 @@
 #'
 #' @export
 #' @import googleway stringr
-#' @importFrom shiny h3 fluidPage titlePanel sidebarLayout sidebarPanel selectizeInput sliderInput helpText mainPanel reactive shinyApp
+#' @importFrom shiny h3
+#' @importFrom shiny fluidPage
+#' @importFrom shiny titlePanel
+#' @importFrom shiny sidebarLayout
+#' @importFrom shiny sidebarPanel
+#' @importFrom shiny selectizeInput
+#' @importFrom shiny sliderInput
+#' @importFrom shiny helpText
+#' @importFrom shiny mainPanel
+#' @importFrom shiny reactive
+#' @importFrom shiny shinyApp
 #' @importFrom glue glue
 #' @importFrom DT dataTableOutput
+
 
 
 shiny_app <- function() {
   castorus_data <- castorus_data
   score_table <- score_table
-  ui <- fluidPage(
+  ui <- function(input, output) {fluidPage(
     titlePanel("Real Estate listings in Paris, taylor made for you"),
 
     sidebarLayout(
@@ -35,19 +46,19 @@ shiny_app <- function() {
 
       mainPanel(
         fluidPage(google_mapOutput("map")),
-        fluidPage(DT::dataTableOutput('table1', width = "50%", height = "10%"))
+        fluidPage(DT::dataTableOutput('table1'))
       )
 
     )
   )
 
-
+}
   server <- function(input, output) {
     castorus_data <- castorus_data %>% rename("X" = X1, "Change_price" = c(11)) %>%  dplyr::select(-depuis,-Change_price,lextrait.n)
     score_table <- score_table %>% dplyr::select(-X) %>%  rename("X" = apartment_index)
     castorus_data <- castorus_data %>% mutate(list_url_description = glue::glue("<a href='{list_url_description}'>{list_url_description} </a>"))
     # castorus_data <- as.data.frame(castorus_data)
-    # #
+    #
 
 
     # # Filter on neighborhood
