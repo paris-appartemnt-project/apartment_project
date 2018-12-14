@@ -11,7 +11,7 @@
 #' @import dplyr
 #'
 #' @examples
-join_dataframe <- function(commerce,restaurants,cinema,schools,stations){
+score_apartments <- function(commerce,restaurants,cinema,schools,stations){
 
   df_commerce <- get_rank(commerce,200)
   df_restaurant <- get_rank(restaurants,500)
