@@ -79,4 +79,31 @@ The huge number of restaurants and bars in Paris does not allow us to implement 
 kable(caption = "Ranking the apartments according to their proximity to restaurants and bars", head(get_rank_restaurants(restaurants,500)))
 ```
 
+Then we can join all those rankings and give weights to the categories that matter for the user. 
+
+```{r}
+join_dataframe <- function(commerces,restaurants,cinemas,schools,stations){
+  
+  df_commerce <- get_rank(commerces,200)
+  df_restaurant <- get_rank(restaurants,500)
+  df_cinema <- get_rank(cinemas,500)
+  df_schools <- get_rank(schools,500) 
+  df_stations <- get_rank(stations,500)
+  df <- list(df_restaurant,df_commerce,df_cinema,df_schools,df_stations)
+  
+  df_scoring <- join_all(df[1:5], type = "inner")
+  
+  
+  df_scoring <- df_scoring %>% 
+    mutate(anime_resto_cine = restaurant + cinema) %>% 
+    select(-cinema,-restaurant) %>% 
+    mutate(apartment_index = as.character(apartment_index)) %>% 
+    mutate_if(is.integer,funs(qt = decile)) %>% 
+    mutate(score = anime_resto_cine_qt + commerce_qt + schools_qt + stations_qt) %>% 
+    arrange(score)
+  
+  return(df_scoring)
+}
+
+```
 
