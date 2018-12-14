@@ -55,13 +55,13 @@ number <- function(castorus) {
 #'
 #' @param castorus dataframe
 #' @param roadnames dataframe with street names
-#' @param stations dataframe with station names
+#' @param metros dataframe with station names
 #'
 #' @return dataframe with the apartments and their locations coming form the scraping and the extraction from the descriptions
 #' @export
-combine_roads <- function(castorus,roadnames,stations) {
+combine_roads <- function(castorus,roadnames,metros) {
   ruepriority <- castorus$rue
-  fullextrait <- data.frame(number(castorus),match_environnement(roadnames,castorus),
+  fullextrait <- data.frame(number(castorus),match_environnement(metros,castorus),
                             match_environnement(stations,castorus))
 
   lextrait <- data.frame(ruepriority,fullextrait)
