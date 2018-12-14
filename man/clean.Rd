@@ -4,7 +4,7 @@
 \alias{clean}
 \title{Cleans the offers descriptions by removing the unwanted characters and getting rid of the ponctuation}
 \usage{
-clean(descriptions)
+clean(df)
 }
 \arguments{
 \item{descriptions}{character}
