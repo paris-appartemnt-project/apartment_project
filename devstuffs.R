@@ -28,6 +28,8 @@ usethis::use_vignette("data_scraping_castorus")
 usethis::use_vignette("apartments_location")
 usethis::use_vignette("scoring_algorithm")
 usethis::use_vignette("location_information")
+usethis::use_vignette("colum_index")
+usethis::use_vignette("coordinates")
 usethis::use_data(castorus_data, schools, cinemas, stores, commerces, restaurants,  stations, score_table, overwrite = TRUE, internal = TRUE)
 devtools::check()
 
