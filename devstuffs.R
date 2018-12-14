@@ -36,6 +36,7 @@ usethis::use_vignette("colum_index")
 usethis::use_vignette("coordinates")
 usethis::use_vignette("shiny_app")
 usethis::use_data(castorus_data, schools, cinemas, stores, commerces, restaurants,  stations, score_table, roadnames, metros, overwrite = TRUE, internal = TRUE)
+devtools::build_vignettes()
 devtools::check()
 
 
