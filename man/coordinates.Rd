@@ -4,10 +4,12 @@
 \alias{coordinates}
 \title{The function takes a dataframe and inputs a new column for the marker image, and also selects the longitude and lattitude column.}
 \usage{
-coordinates(castorus_table)
+coordinates(castorus_table, iconUrl)
 }
 \arguments{
 \item{castorus_table}{work on this data frame to obtain the longitude, the lattitude and icon shape colum.}
+
+\item{iconUrl}{allows to get the flag on the map}
 }
 \value{
 a data frame with longitude lattitude and the icon shape column.

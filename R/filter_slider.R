@@ -10,7 +10,7 @@
 #' @export
 #'
 filter_slider <- function(castorus_table, tri, min, max, value){
-  temp<- tri %>% dplyr::filter(tri_categories[,value] %in% c(min:max)) %>% select(X)
-  a <- castorus_table %>% dplyr::filter(X %in% temp$X)
+  temp<- tri %>% dplyr::filter(score_table[,value] %in% c(min:max)) %>% select(X)
+  a <- castorus_data %>% dplyr::filter(X1 %in% temp$X1)
   return(a)
 }

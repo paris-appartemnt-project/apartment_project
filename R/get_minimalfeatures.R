@@ -20,6 +20,5 @@ get_minimalfeatures <- function(min_price,max_price,min_surface,max_surface,N,mi
     filter(arrondissement %in% N) %>%
     dplyr::select(-titre,-vue.le,-Type) %>%
   filter(latitude != is.na(latitude)) %>%
-  filter(longitude != is.na(longitude)) %>%
-  select(longitude, latitude)
+  filter(longitude != is.na(longitude))
   }
