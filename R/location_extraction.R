@@ -62,7 +62,7 @@ number <- function(castorus) {
 combine_roads <- function(castorus,roadnames,metros) {
   ruepriority <- castorus$rue
   fullextrait <- data.frame(number(castorus),match_environnement(metros,castorus),
-                            match_environnement(stations,castorus))
+                            match_environnement(metros,castorus))
 
   lextrait <- data.frame(ruepriority,fullextrait)
   priority <- data.frame(lextrait$ruepriority,lextrait$rue_du_bien)
